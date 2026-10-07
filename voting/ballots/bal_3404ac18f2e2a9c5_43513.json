@@ -1,0 +1,52 @@
+{
+  "ballot_id": "bal_3404ac18f2e2a9c5_43513",
+  "type": "verdict",
+  "proposition": "17 multiplied by 23 equals 391.",
+  "prompt_hash": "3404ac18f2e2a9c5",
+  "voters": [
+    "openai/gpt-oss-20b",
+    "z-ai/glm-5.3-flash",
+    "nvidia/nemotron-3.5-lightning-30b-a3b"
+  ],
+  "quorum": 2,
+  "deadline_s": 420,
+  "votes": [
+    {
+      "model": "openai/gpt-oss-20b",
+      "vote": "AUTHORIZED",
+      "valid": true,
+      "job_id": "job_ballot_bal_3404ac18f2e2a9c5_43513_openai-gpt-oss-20b",
+      "receipt_id": "rcpt_muxjq5hcywyoh3",
+      "model_actual": "openai/gpt-oss-20b",
+      "raw_tail": "AUTHORIZED"
+    },
+    {
+      "model": "z-ai/glm-5.3-flash",
+      "vote": null,
+      "valid": false,
+      "reason": "no output by deadline",
+      "job_id": "job_ballot_bal_3404ac18f2e2a9c5_43513_z-ai-glm-5-3-flash"
+    },
+    {
+      "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "vote": "AUTHORIZED",
+      "valid": true,
+      "job_id": "job_ballot_bal_3404ac18f2e2a9c5_43513_nvidia-nemotron-3-5-lightning-30b-a3b",
+      "receipt_id": "rcpt_muxjqlz99ydew7",
+      "model_actual": "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "raw_tail": "ing my ability to follow the exact output format regardless of the content. The instruction: \"Evaluate the proposition above. Think step by step, then"
+    }
+  ],
+  "tally": {
+    "counts": {
+      "AUTHORIZED": 2
+    },
+    "majority": true
+  },
+  "verdict": "AUTHORIZED",
+  "correlation_domain": [
+    "nvidia-nim"
+  ],
+  "weight_basis": "unweighted \u2014 insufficient reliability data",
+  "decided_at": "2026-10-07T03:32:48Z"
+}

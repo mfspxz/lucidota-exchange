@@ -1,0 +1,109 @@
+{
+ "steps": [
+  {
+   "name": "ballot_reused",
+   "ballot_id": "bal_muxl7degm8jycg"
+  },
+  {
+   "name": "ballot_jobs",
+   "jobs": [
+    "job_ballot_bal_muxl7degm8jycg_nvidia_nemotron_3_5_lightning_30b_a3b",
+    "job_ballot_bal_muxl7degm8jycg_openai_gpt_oss_20b"
+   ]
+  },
+  {
+   "name": "claims_done",
+   "n": 0,
+   "jobs": []
+  },
+  {
+   "name": "ballot_terminal",
+   "state": "open",
+   "verdict": null,
+   "tally": {
+    "state": "open",
+    "verdict": null,
+    "valid": 0,
+    "counts": {},
+    "votes": []
+   }
+  },
+  {
+   "name": "test_b_triple_read",
+   "identical": false,
+   "hashes": [
+    "8f0e0d6e4b8021908cfd370ec2c2aa7c2d42fef3ac770ea529f978488ff0850b",
+    "f960d7240f91f4d97d9f3ee0df2e27696e4b48e7f2efa2a90b5d014cac442af2",
+    "f969c031325959000d7470de86e08517af0838bd41197a885c70acdeea0cd049"
+   ],
+   "tally": {
+    "state": "open",
+    "verdict": null,
+    "valid": 0,
+    "counts": {},
+    "votes": []
+   }
+  },
+  {
+   "name": "late_job_submitted",
+   "status": 200,
+   "job": "job_ballot_bal_muxl7degm8jycg_rt2_latevote",
+   "deduplicated": null
+  },
+  {
+   "name": "late_job_resubmit",
+   "status": 200,
+   "deduplicated": true,
+   "same_job": true
+  },
+  {
+   "name": "late_claimed",
+   "claim": true
+  },
+  {
+   "name": "late_completed",
+   "status": 200,
+   "idempotent": null,
+   "receipt": "rcpt_muxlfx8o382qqa"
+  },
+  {
+   "name": "test_d_replay",
+   "status": 200,
+   "idempotent": true,
+   "note": "already completed \u2014 no duplicate accounting"
+  },
+  {
+   "name": "late_receipts",
+   "n": 2,
+   "results": [
+    [
+     "rcpt_muxlfx8o382qq",
+     "ok"
+    ],
+    [
+     "rcpt_muxlfewdckdv5",
+     "deferred"
+    ]
+   ]
+  },
+  {
+   "name": "test_c_tally_compare",
+   "pre": {
+    "state": "open",
+    "verdict": null,
+    "valid": 0,
+    "counts": {},
+    "votes": []
+   },
+   "post": {
+    "state": "open",
+    "verdict": null,
+    "valid": 0,
+    "counts": {},
+    "votes": []
+   },
+   "state_frozen": true,
+   "tally_detail_changed": false
+  }
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "target_ballot": "bal_muxkw3lxs1o7vu",
+ "tests": {
+  "T1": {
+   "desc": "top-level ballot_id=B2 in complete body",
+   "job_id": "job_rt2-f3-T1-345687",
+   "tally_before": 0,
+   "aborted": "FOREIGN job 'job_ballot_bal_muxkzjt39s9tcq_rt2_b2_a' claimed - STOPPING, leaving for expiry/replan"
+  },
+  "T2": {
+   "aborted": "stopped"
+  },
+  "T3": {
+   "aborted": "stopped"
+  },
+  "T4": {
+   "aborted": "stopped"
+  },
+  "T5": {
+   "aborted": "stopped"
+  },
+  "T6": {
+   "aborted": "stopped"
+  }
+ },
+ "notes": [],
+ "requests": 5
+}

@@ -1,0 +1,4 @@
+{"claimant": "lucidota", "created_at": "2026-10-07T03:22:04Z", "kind": "claim", "proposition": "openai/gpt-oss-20b faithfully repeats a given string", "record": "claim:c-001"}
+{"claim_ref": "claim:c-001", "created_at": "2026-10-07T03:22:04Z", "created_by": "lucidota", "kind": "evidence-task", "record": "task:ev-001", "status": "pending"}
+{"claimant": "lucidota", "created_at": "2026-10-07T03:29:42Z", "kind": "claim", "proposition": "openai/gpt-oss-20b outputs the string xyzzy123 on demand", "record": "claim:c-002"}
+{"claim_ref": "claim:c-002", "created_at": "2026-10-07T03:29:42Z", "created_by": "lucidota", "kind": "evidence-task", "record": "task:ev-002", "status": "pending"}

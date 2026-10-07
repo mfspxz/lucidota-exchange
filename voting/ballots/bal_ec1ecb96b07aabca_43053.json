@@ -1,0 +1,54 @@
+{
+  "ballot_id": "bal_ec1ecb96b07aabca_43053",
+  "type": "answer",
+  "proposition": "What is 17 multiplied by 23?",
+  "prompt_hash": "ec1ecb96b07aabca",
+  "voters": [
+    "openai/gpt-oss-20b",
+    "z-ai/glm-5.3-flash",
+    "nvidia/nemotron-3.5-lightning-30b-a3b"
+  ],
+  "quorum": 2,
+  "deadline_s": 420,
+  "votes": [
+    {
+      "model": "openai/gpt-oss-20b",
+      "vote": "391",
+      "normalized": "391",
+      "valid": true,
+      "job_id": "job_ballot_bal_ec1ecb96b07aabca_43053_openai-gpt-oss-20b",
+      "receipt_id": "rcpt_muxjf2bp5zrchz",
+      "model_actual": "openai/gpt-oss-20b",
+      "raw": "391"
+    },
+    {
+      "model": "z-ai/glm-5.3-flash",
+      "vote": null,
+      "valid": false,
+      "reason": "no output by deadline",
+      "job_id": "job_ballot_bal_ec1ecb96b07aabca_43053_z-ai-glm-5-3-flash"
+    },
+    {
+      "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "vote": "391",
+      "normalized": "391",
+      "valid": true,
+      "job_id": "job_ballot_bal_ec1ecb96b07aabca_43053_nvidia-nemotron-3-5-lightning-30b-a3b",
+      "receipt_id": "rcpt_muxjie5ealisgq",
+      "model_actual": "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "raw": "391"
+    }
+  ],
+  "tally": {
+    "clusters": {
+      "391": 2
+    },
+    "majority": true
+  },
+  "verdict": "391",
+  "correlation_domain": [
+    "nvidia-nim"
+  ],
+  "weight_basis": "unweighted \u2014 insufficient reliability data",
+  "decided_at": "2026-10-07T03:24:50Z"
+}

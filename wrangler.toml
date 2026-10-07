@@ -1,0 +1,16 @@
+# lucidota-exchange — LUCIDOTA Free Compute Exchange v0
+name = "lucidota-exchange"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+account_id = "243aabef9144fd3b8dd334cb19319e75"
+
+[[d1_databases]]
+binding = "EXCHANGE_DB"
+database_name = "exchange"
+database_id = "0ea89801-9b0a-4efa-9d2f-170d7d285e69"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Secrets (set via: python3 set-secret.py --script lucidota-exchange --name EXCHANGE_KEY)
+#   EXCHANGE_KEY — required Bearer <redacted> for all /v1/* routes. Missing = 503 fail-closed.
