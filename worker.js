@@ -69,6 +69,11 @@
  * Job states: submitted | running | done | failed | blocked | deferred
  */
 
+// SPEC-GAP-PL-007 (wave-32): envelope provenance at ingest. The verifier is a
+// byte-faithful port of the lucidota-receipt/1 verify path (see envelope.js).
+// NOTE for deploy: wrangler must bundle ./envelope.js with this module.
+import { verifyEnvelope as verifyReceiptEnvelope } from "./envelope.js";
+
 const VERSION = "0.6.14"; // v0.6.14: D1 read-burn code fixes (wave-29): warrantedTierInfo memoization (autoPromote+demoteCheck share one window computation per resource per cron run), health_observations retention (pruneHealthObservations, 30d, per scheduled run), health_observations CREATE TABLE version-controlled in migrate(), hot-path indexes applied at boot (0001 x2 + 0002 receipts(created_at)) // v0.6.13: migrate guard extended to scheduled() + */5 cron trigger enabled (reaction loop live) — migrate() once per isolate via __migrated guard (was every request: ~40 PRAGMAs + DDL reads/request, blew 75% of daily 5M rows_read free tier) // REDTEAM-2 tally fixes: ballot decision receipt excluded from its own tally (was phantom INVALID vote); verdict extraction takes LAST keyword in tail (was first — misread "Final verdict:" line) // REDTEAM-2 fixes: ballot_id stamped on ALL successful vote receipts (honest votes were invisible to tallies); INV7: SUCCEEDED+{} -> VERIFICATION_FAILURE for non-inference // REDTEAM-2 ballot fixes: ballot receipt job_id sentinel (was 500 on terminal transition); voter validation+slug-dedup pre-insert // 0.6.8: battery v4 R1 HIGH atomic completion idempotency (W2) // 0.6.7: deadline_s validated (400 on non-finite/non-positive, 30d cap) // voting amendments: /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1 // battery v4 R1 HIGH: atomic completion idempotency (W2) + v0.6.7 voting // voting: deadline_s validated (400 on non-finite/non-positive, 30d cap): /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 (ternary extraction, auto-prune, governor-minted needs_evidence) // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1: sovereign governor, untrusted workers — governor scalability fix (backpressure + claim expiry filter + replan receipts)
 
 /* ------------------------------------------------------------------ */
@@ -171,6 +176,51 @@ async function authWorker(db, request, body) {
     return { ok: false, status: 403, error: "bad worker secret" };
   await db.prepare("UPDATE workers SET last_seen_at=? WHERE worker_id=?").bind(now(), wid).run();
   return { ok: true, worker: w };
+}
+
+/* ------------------------------------------------------------------ */
+/* Envelope provenance at ingest (SPEC-GAP-PL-007, wave-32)             */
+/*                                                                     */
+/* Every receipt crossing an ingest boundary MUST carry a valid         */
+/* lucidota-receipt/1 envelope sealed by the authority key. Transport   */
+/* auth (worker secret / Bearer) is NOT provenance: a compromised       */
+/* credential must not be enough to inject forged receipts. Fail        */
+/* closed: missing/invalid/unverifiable envelope → reject, record in    */
+/* envelope_rejections, never store. The authority key arrives as the   */
+/* PL_SIG_KEY Cloudflare secret at runtime (documented, never in code,  */
+/* never logged); if it is absent the worker refuses ingest (503)       */
+/* rather than accepting unverifiable receipts.                        */
+/* ------------------------------------------------------------------ */
+async function recordEnvelopeRejection(db, route, b, reason) {
+  try {
+    const e = (b && b.envelope) || {};
+    await db.prepare(
+      "INSERT INTO envelope_rejections (at, route, reason, claim_id, actor) VALUES (?,?,?,?,?)"
+    ).bind(new Date().toISOString(), route, String(reason).slice(0, 300),
+      (typeof e.claim_id === "string" ? e.claim_id : (b && b.claim_id) || null),
+      (typeof e.actor === "string" ? e.actor : null)).run();
+  } catch { /* the audit write must never break the fail-closed rejection */ }
+}
+
+async function requireEnvelope(db, route, b, env) {
+  const keyHex = (env.PL_SIG_KEY || "").trim();
+  if (!/^[0-9a-fA-F]{64}$/.test(keyHex)) {
+    await recordEnvelopeRejection(db, route, b, "authority key not provisioned");
+    return { error: "envelope authority key not provisioned — refusing unverifiable ingest", status: 503 };
+  }
+  const e = b ? b.envelope : null;
+  if (!e || typeof e !== "object" || Array.isArray(e)) {
+    await recordEnvelopeRejection(db, route, b, "missing envelope");
+    return { error: "missing envelope: receipts must carry a lucidota-receipt/1 envelope", status: 400 };
+  }
+  try {
+    await verifyReceiptEnvelope(e, keyHex);
+  } catch (err) {
+    const why = String((err && err.message) || err).slice(0, 200);
+    await recordEnvelopeRejection(db, route, b, "rejected: " + why);
+    return { error: "envelope rejected: " + why, status: 401 };
+  }
+  return { ok: true };
 }
 
 /* ------------------------------------------------------------------ */
@@ -295,6 +345,12 @@ async function migrate(db) {
   await db.prepare(`CREATE TABLE IF NOT EXISTS ballot_policy (
     id TEXT PRIMARY KEY, voters TEXT NOT NULL, quorum_rule TEXT DEFAULT 'majority',
     deadline_s INTEGER DEFAULT 600, tie_policy TEXT DEFAULT 'unknown')`).run();
+  // SPEC-GAP-PL-007 (wave-32): durable audit of fail-closed envelope rejections
+  // at the ingest boundary. Additive, auto-applies on next boot like the
+  // other migrate() DDL — no separate Cloudflare step.
+  await db.prepare(`CREATE TABLE IF NOT EXISTS envelope_rejections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT, route TEXT, reason TEXT,
+    claim_id TEXT, actor TEXT)`).run();
   const pol = await db.prepare("SELECT id FROM ballot_policy WHERE id='default'").first();
   if (!pol) await db.prepare(
     "INSERT INTO ballot_policy (id,voters,quorum_rule,deadline_s,tie_policy) VALUES (?,?,?,?,?)"
@@ -2007,6 +2063,8 @@ async function handle(request, env) {
     try { b = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
     const a = await authWorker(db, request, b);
     if (!a.ok) return json({ error: a.error }, a.status);
+    const ev = await requireEnvelope(db, "complete", b, env);
+    if (!ev.ok) return json({ error: ev.error }, ev.status);
     const r = await completeClaimed(db, b, a.worker);
     return json(r, r.status || 200);
   }
@@ -2289,6 +2347,8 @@ async function handle(request, env) {
     // All-or-nothing under backpressure: if N voters don't fit, 429.
     let b;
     try { b = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
+    const evb = await requireEnvelope(db, "ballots", b, env);
+    if (!evb.ok) return json({ error: evb.error }, evb.status);
     const btype = b.ballot_type;
     if (!["verdict", "answer"].includes(btype))
       return json({ error: "ballot_type must be verdict|answer" }, 400);
@@ -2487,6 +2547,8 @@ async function handle(request, env) {
   if (path === "/v1/observe" && request.method === "POST") {
     let b;
     try { b = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
+    const evo = await requireEnvelope(db, "observe", b, env);
+    if (!evo.ok) return json({ error: evo.error }, evo.status);
     if (!b.resource_id) return json({ error: "resource_id required" }, 400);
     return json(await observe(db, b.resource_id, !!b.ok, b.latency_ms || null, b.detail || null));
   }

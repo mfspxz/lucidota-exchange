@@ -1,0 +1,78 @@
+{
+ "complete-legit": {
+  "env": "lucidota-receipt/1",
+  "ts": "2026-10-09T09:00:00Z",
+  "actor": "luci",
+  "claim_id": "test-claim-1",
+  "status": "established",
+  "payload": {
+   "kind": "completion",
+   "worker_outcome": "SUCCEEDED"
+  },
+  "payload_hash": "028c0459a14f9a0e71070ee257b6d7ab7623b02583fa6ab14a29aebac84dadba",
+  "prev_hash": "GENESIS",
+  "sig": "HS256:bc2141d1d8fbfe2ba923ad6101e844a9e8d699d6e3db86cfd35e809fd656bbbf",
+  "seal": "36757cbb38c72c29bd2cb2035c4aca8d37a455d0477cf687c37b9eaaae37c227"
+ },
+ "observe-legit": {
+  "env": "lucidota-receipt/1",
+  "ts": "2026-10-09T09:00:01Z",
+  "actor": "luci",
+  "claim_id": "test-observe-1",
+  "status": "claimed",
+  "payload": {
+   "kind": "observation",
+   "resource_id": "test-res-1",
+   "ok": true
+  },
+  "payload_hash": "de63c27eb51f7bcdf7b70a49955a2af46a785f76b3181398efa0f42d3e2398f2",
+  "prev_hash": "GENESIS",
+  "sig": "HS256:4e5aa08b293ab729600aa536ccbbcbe7185f8dda7cd9903337b5bbf8d60e6bc6",
+  "seal": "a67ae2436e72bede1791d12942435523eaba169a7076bfc97b8903549cb981c7"
+ },
+ "ballot-legit": {
+  "env": "lucidota-receipt/1",
+  "ts": "2026-10-09T09:00:02Z",
+  "actor": "luci",
+  "claim_id": "test-ballot-1",
+  "status": "claimed",
+  "payload": {
+   "kind": "ballot",
+   "ballot_type": "verdict"
+  },
+  "payload_hash": "55255eccfa4e442b517efb2d20873bc028775337891301d57cdb7a28c24f1077",
+  "prev_hash": "GENESIS",
+  "sig": "HS256:0386566f22d148ce77b3301b416ff5719f0a492d8b0bf9ccdc70c823e25496e0",
+  "seal": "356f8cebbcbc91f008d6b7bbc6cf2691519de8cd668e806d85834852be3be364"
+ },
+ "chain": [
+  {
+   "env": "lucidota-receipt/1",
+   "ts": "2026-10-09T09:00:03Z",
+   "actor": "luci",
+   "claim_id": "chain-a",
+   "status": "claimed",
+   "payload": {
+    "n": 1
+   },
+   "payload_hash": "2bfd14f43d17fc7cea24e0917a8879b4b2f880b8baeec1b9d90fbaad655e71bd",
+   "prev_hash": "GENESIS",
+   "sig": "HS256:b9bc29b1554e6577f4e9b6a88a93c7a5f8f2443e1536803bbdec5d7c9115daf7",
+   "seal": "7ad79e4873604612fce14514f63c1ec67c78a973d0b8a71400a350f92128f980"
+  },
+  {
+   "env": "lucidota-receipt/1",
+   "ts": "2026-10-09T09:00:04Z",
+   "actor": "luci",
+   "claim_id": "chain-b",
+   "status": "established",
+   "payload": {
+    "n": 2
+   },
+   "payload_hash": "363379742f80b51bdb9206579af7754911543079b9399cb3fc315fb199f476e8",
+   "prev_hash": "7ad79e4873604612fce14514f63c1ec67c78a973d0b8a71400a350f92128f980",
+   "sig": "HS256:ffe88bdfc3c7d88a94a57619c0bf7104f44a893912227fcc77fa5f02976c9664",
+   "seal": "e5534a21334eed4f83e46e4f3fb0d4725aa4f1823c23eda712a1872db21dbf45"
+  }
+ ]
+}
