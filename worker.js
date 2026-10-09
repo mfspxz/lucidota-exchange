@@ -202,6 +202,53 @@ async function recordEnvelopeRejection(db, route, b, reason) {
   } catch { /* the audit write must never break the fail-closed rejection */ }
 }
 
+/* ------------------------------------------------------------------ */
+/* Replay/freshness binding (SPEC-GAP-PL-007 follow-up, wave-36)      */
+/*                                                                     */
+/* A valid-but-replayed envelope was accepted indefinitely. Now the    */
+/* requireEnvelope path keeps a bounded in-memory registry of seen     */
+/* envelope seals (seal = sha256 of the canonical envelope — content   */
+/* addressed, so a byte-identical replay hashes to the same key).      */
+/*                                                                     */
+/* Freshness window: REPLAY_TTL_MS = 1h. Justification: the exchange's */
+/* own cadence is minutes (5-min cron, worker retries within minutes), */
+/* not days — PL's 24h STALE-EXEC window is the wrong analogy here. 1h */
+/* covers every legitimate retry horizon and the plausible            */
+/* capture→reuse attack cycle while keeping the bound trivial.         */
+/*                                                                     */
+/* Bounds: REPLAY_MAX_SEEN = 10k entries (~1MB). Fail-closed: if the   */
+/* registry is full (flood), NEW ingest is refused (503) rather than   */
+/* evicting-and-silently-re-admitting replays. Entries expire by TTL   */
+/* with a sweep on each check.                                         */
+/*                                                                     */
+/* HONEST LIMIT: this registry is per-isolate memory (workerd runs     */
+/* many isolates; the node harness runs one). Cross-isolate replay     */
+/* needs a D1-backed seen-seals table — filed as the CF-gated          */
+/* live-D1 follow-up, not half-built here.                            */
+/*                                                                     */
+/* HTTP mapping: missing envelope 400 / invalid 401 / replay 409 /     */
+/* unprovisioned key 503 / registry-full 503.                          */
+/* ------------------------------------------------------------------ */
+const REPLAY_TTL_MS = 60 * 60 * 1000;
+const REPLAY_MAX_SEEN = 10000;
+const _seenSeals = new Map(); // seal -> first-seen epoch ms
+
+function _sweepSeenSeals(nowMs) {
+  for (const [s, t] of _seenSeals) {
+    if (nowMs - t > REPLAY_TTL_MS) _seenSeals.delete(s);
+  }
+}
+
+/** @returns {{ok:true}|{replay:true}|{full:true}} */
+function checkReplay(seal) {
+  const nowMs = Date.now();
+  _sweepSeenSeals(nowMs);
+  if (_seenSeals.has(seal)) return { replay: true };
+  if (_seenSeals.size >= REPLAY_MAX_SEEN) return { full: true };
+  _seenSeals.set(seal, nowMs);
+  return { ok: true };
+}
+
 async function requireEnvelope(db, route, b, env) {
   const keyHex = (env.PL_SIG_KEY || "").trim();
   if (!/^[0-9a-fA-F]{64}$/.test(keyHex)) {
@@ -219,6 +266,16 @@ async function requireEnvelope(db, route, b, env) {
     const why = String((err && err.message) || err).slice(0, 200);
     await recordEnvelopeRejection(db, route, b, "rejected: " + why);
     return { error: "envelope rejected: " + why, status: 401 };
+  }
+  // verifyEnvelope passed: e.seal is the verified content hash of the envelope.
+  const rp = checkReplay(e.seal);
+  if (rp.replay) {
+    await recordEnvelopeRejection(db, route, b, "replay: envelope seal already seen");
+    return { error: "envelope replay rejected: this envelope was already submitted", status: 409 };
+  }
+  if (rp.full) {
+    await recordEnvelopeRejection(db, route, b, "replay registry full — refusing new ingest");
+    return { error: "replay registry full — refusing new ingest (fail-closed)", status: 503 };
   }
   return { ok: true };
 }

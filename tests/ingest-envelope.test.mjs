@@ -16,8 +16,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { makeD1 } from "./d1-shim.mjs";
+import { canonicalJSON } from "../envelope.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const routeEnvs = JSON.parse(readFileSync(join(here, "fixtures", "route-envelopes.json"), "utf8"));
@@ -172,14 +173,60 @@ async function tableCount(t) {
   ok("missing PL_SIG_KEY -> 503 fail-closed (no silent bypass)");
 }
 
-// --- replay is NOT rejected (no freshness binding — documented next_gap) ------------
+// --- replay binding (wave-36: closes the wave-32 next_gap) --------------------
+// Capture the valid observe-legit envelope already accepted above and replay it
+// unchanged: must be REJECTED (409), nothing new stored, rejection audited.
+// A second DISTINCT envelope on the same route: must be ACCEPTED (200).
 {
-  // A replayed-but-valid envelope is accepted today: the envelope layer has
-  // no nonce/freshness binding (filed as next_gap, not half-built).
-  const r = await post("/v1/observe",
+  // Mint a fresh, distinct, test-key-signed envelope (same shape as fixtures).
+  const mint = (over = {}) => {
+    const base = {
+      env: "lucidota-receipt/1",
+      ts: new Date().toISOString(),
+      actor: "luci",
+      claim_id: "replay-test-2",
+      status: "claimed",
+      payload: { kind: "observation", resource_id: "test-res-1", ok: true, nonce: "distinct-2" },
+      prev_hash: "GENESIS",
+      ...over,
+    };
+    const nosig = { ...base };
+    const payload_hash = createHash("sha256").update(canonicalJSON(base.payload), "utf8").digest("hex");
+    const withHash = { ...nosig, payload_hash };
+    const sig = "HS256:" + createHmac("sha256", Buffer.from(TEST_KEY, "hex"))
+      .update(canonicalJSON(withHash), "utf8").digest("hex");
+    const noseal = { ...withHash, sig };
+    const seal = createHash("sha256").update(canonicalJSON(noseal), "utf8").digest("hex");
+    return { ...noseal, seal };
+  };
+
+  const obsBefore = await tableCount("health_observations");
+  const rejBefore = (await rejections()).filter((x) => x.route === "observe").length;
+
+  // Replay: observe-legit was accepted earlier in this file -> 409 now.
+  let r = await post("/v1/observe",
     { resource_id: "r1", ok: true, envelope: routeEnvs["observe-legit"] }, adminH);
-  assert.equal(r.status, 200);
-  ok("replay: valid envelope re-accepted (no freshness binding — next_gap filed)");
+  assert.equal(r.status, 409, JSON.stringify(r.body).slice(0, 200));
+  assert.match(r.body.error, /replay/);
+  assert.equal(await tableCount("health_observations"), obsBefore);
+  ok("replay: byte-identical valid envelope -> 409, nothing stored");
+
+  const rej = await rejections();
+  assert.equal(rej.filter((x) => x.route === "observe").length, rejBefore + 1);
+  assert.match(rej[rej.length - 1].reason, /replay/);
+  ok("replay: rejection recorded in envelope_rejections");
+
+  // Distinct envelope on the same route: accepted, no behavior change to legit path.
+  const fresh = mint();
+  r = await post("/v1/observe", { resource_id: "r1", ok: true, envelope: fresh }, adminH);
+  assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 200));
+  assert.equal(await tableCount("health_observations"), obsBefore + 1);
+  ok("replay: distinct envelope -> 200, observation stored");
+
+  // And the distinct envelope now replays too (registry is live, not one-shot).
+  r = await post("/v1/observe", { resource_id: "r1", ok: true, envelope: fresh }, adminH);
+  assert.equal(r.status, 409);
+  ok("replay: second distinct envelope replays -> 409");
 }
 
 console.log(`\n${passed} route checks green — ingest boundary enforces envelope provenance`);
