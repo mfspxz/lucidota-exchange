@@ -69,7 +69,7 @@
  * Job states: submitted | running | done | failed | blocked | deferred
  */
 
-const VERSION = "0.6.13"; // v0.6.13: migrate guard extended to scheduled() + */5 cron trigger enabled (reaction loop live) — migrate() once per isolate via __migrated guard (was every request: ~40 PRAGMAs + DDL reads/request, blew 75% of daily 5M rows_read free tier) // REDTEAM-2 tally fixes: ballot decision receipt excluded from its own tally (was phantom INVALID vote); verdict extraction takes LAST keyword in tail (was first — misread "Final verdict:" line) // REDTEAM-2 fixes: ballot_id stamped on ALL successful vote receipts (honest votes were invisible to tallies); INV7: SUCCEEDED+{} -> VERIFICATION_FAILURE for non-inference // REDTEAM-2 ballot fixes: ballot receipt job_id sentinel (was 500 on terminal transition); voter validation+slug-dedup pre-insert // 0.6.8: battery v4 R1 HIGH atomic completion idempotency (W2) // 0.6.7: deadline_s validated (400 on non-finite/non-positive, 30d cap) // voting amendments: /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1 // battery v4 R1 HIGH: atomic completion idempotency (W2) + v0.6.7 voting // voting: deadline_s validated (400 on non-finite/non-positive, 30d cap): /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 (ternary extraction, auto-prune, governor-minted needs_evidence) // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1: sovereign governor, untrusted workers — governor scalability fix (backpressure + claim expiry filter + replan receipts)
+const VERSION = "0.6.14"; // v0.6.14: D1 read-burn code fixes (wave-29): warrantedTierInfo memoization (autoPromote+demoteCheck share one window computation per resource per cron run), health_observations retention (pruneHealthObservations, 30d, per scheduled run), health_observations CREATE TABLE version-controlled in migrate(), hot-path indexes applied at boot (0001 x2 + 0002 receipts(created_at)) // v0.6.13: migrate guard extended to scheduled() + */5 cron trigger enabled (reaction loop live) — migrate() once per isolate via __migrated guard (was every request: ~40 PRAGMAs + DDL reads/request, blew 75% of daily 5M rows_read free tier) // REDTEAM-2 tally fixes: ballot decision receipt excluded from its own tally (was phantom INVALID vote); verdict extraction takes LAST keyword in tail (was first — misread "Final verdict:" line) // REDTEAM-2 fixes: ballot_id stamped on ALL successful vote receipts (honest votes were invisible to tallies); INV7: SUCCEEDED+{} -> VERIFICATION_FAILURE for non-inference // REDTEAM-2 ballot fixes: ballot receipt job_id sentinel (was 500 on terminal transition); voter validation+slug-dedup pre-insert // 0.6.8: battery v4 R1 HIGH atomic completion idempotency (W2) // 0.6.7: deadline_s validated (400 on non-finite/non-positive, 30d cap) // voting amendments: /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1 // battery v4 R1 HIGH: atomic completion idempotency (W2) + v0.6.7 voting // voting: deadline_s validated (400 on non-finite/non-positive, 30d cap): /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 (ternary extraction, auto-prune, governor-minted needs_evidence) // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1: sovereign governor, untrusted workers — governor scalability fix (backpressure + claim expiry filter + replan receipts)
 
 /* ------------------------------------------------------------------ */
 /* Seed registry — the known world. Registered idempotently via /v1/seed */
@@ -151,6 +151,13 @@ function authed(request, env) {
 /* Exchange is willing to believe.                                     */
 /* ------------------------------------------------------------------ */
 const WORKER_OUTCOMES = ["SUCCEEDED", "FAILED_RETRYABLE", "FAILED_PERMANENT", "QUARANTINED", "EXPIRED"];
+
+// Burner #3 fix (wave-29, d1-burn-codefixes): bounded retention for the
+// append-only health_observations table. warrantedTier needs 7d of history,
+// demoteCheck needs 24h — 30d is comfortably safe and stops H (hence per-run
+// scan cost) from growing without bound. Enforced by pruneHealthObservations(),
+// called once per scheduled() run.
+const HEALTH_RETENTION_DAYS = 30;
 
 // Worker-scoped auth: X-Worker-Id + X-Worker-Secret (or body fields).
 // The secret is stored as sha256hex; the Exchange never returns it.
@@ -294,6 +301,30 @@ async function migrate(db) {
   ).bind("default",
     JSON.stringify(["openai/gpt-oss-20b","z-ai/glm-5.3-flash","nvidia/nemotron-3.5-lightning-30b-a3b"]),
     "majority", 600, "unknown").run();
+  // v0.6.14 (wave-29, d1-burn-codefixes): health_observations was created
+  // out-of-band in D1 — the schema lived nowhere in the repo. Version-control
+  // it here. Column list reconstructed from the INSERT in observe()
+  // (resource_id, ok, latency_ms, detail) + observed_at default. The ensure()
+  // calls cover a pre-existing out-of-band table missing any column.
+  await db.prepare(`CREATE TABLE IF NOT EXISTS health_observations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    resource_id TEXT NOT NULL, ok INTEGER NOT NULL,
+    latency_ms REAL, detail TEXT,
+    observed_at TEXT DEFAULT (datetime('now')))`).run();
+  await ensure("health_observations", "resource_id", "resource_id TEXT");
+  await ensure("health_observations", "ok", "ok INTEGER");
+  await ensure("health_observations", "latency_ms", "latency_ms REAL");
+  await ensure("health_observations", "detail", "detail TEXT");
+  await ensure("health_observations", "observed_at", "observed_at TEXT DEFAULT (datetime('now'))");
+  // v0.6.14 (wave-29): hot-path indexes, boot-time application path.
+  // migrations/0001 (wave-15) was committed but never applied to live D1;
+  // migrations/0002 (wave-29) adds the receipts index. Both files remain the
+  // out-of-band (wrangler) application path; IF NOT EXISTS keeps the two
+  // paths from conflicting. Landing them here applies them automatically on
+  // the next boot — no separate Cloudflare-gated step required.
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_health_obs_resource_observed ON health_observations (resource_id, observed_at DESC)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_health_obs_resource_ok_observed ON health_observations (resource_id, ok, observed_at DESC)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_receipts_created_at ON receipts (created_at DESC)`).run();
   const done = await db.prepare("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'").first();
   if (!done || done.c === 0) await backfillEvidence(db);
 }
@@ -333,27 +364,41 @@ async function setEvidence(db, rid, to, trigger, detail, force = false) {
 
 // Highest tier warranted by recorded evidence alone. DISCOVERED never comes
 // from observations — only from explicit registration (a lead, not proof).
-async function warrantedTier(db, rid) {
+//
+// Burner #2 fix (wave-29, d1-burn-codefixes): warrantedTier recomputed the
+// ok7/ok24 health windows on every call, and autoPromote + demoteCheck each
+// triggered a computation per resource per cron run (3 window scans per
+// resource per run). warrantedTierInfo computes the tier AND the underlying
+// counts once; autoPromote/demoteCheck accept the info object via an
+// optional parameter and share it. Callers that need only one of the two
+// pass nothing and behave exactly as before — no query-count regression on
+// the fresh path. warrantedTier keeps its original signature/semantics.
+async function warrantedTierInfo(db, rid) {
   const r = await db.prepare("SELECT state FROM resources WHERE id=?").bind(rid).first();
-  if (!r) return "UNKNOWN";
+  if (!r) return { tier: "UNKNOWN", ok7: 0, ok24: 0, execOk: 0, freeExec: 0, quotaMeasured: false };
   const ok7 = (await db.prepare("SELECT COUNT(*) c FROM health_observations WHERE resource_id=? AND ok=1 AND observed_at>?").bind(rid, minutesAgo(7 * 24 * 60)).first() || {}).c || 0;
   const ok24 = (await db.prepare("SELECT COUNT(*) c FROM health_observations WHERE resource_id=? AND ok=1 AND observed_at>?").bind(rid, minutesAgo(24 * 60)).first() || {}).c || 0;
   const execOk = (await db.prepare("SELECT COUNT(*) c FROM executions WHERE resource_id=? AND result='ok'").bind(rid).first() || {}).c || 0;
   const freeExec = (await db.prepare("SELECT COUNT(*) c FROM receipts WHERE resource=? AND result='ok' AND (cost IS NULL OR cost=0)").bind(rid).first() || {}).c || 0;
   const q = await db.prepare("SELECT * FROM quotas WHERE resource_id=?").bind(rid).first();
-  const quotaMeasured = q && q.measured === 1 && (q.used_window || 0) < (q.limit_per_min || 0);
-  if (ok7 >= 3 && ok24 >= 1 && r.state === "AVAILABLE" && execOk >= 1) return "VERIFIED";
-  if (ok24 >= 1 && (r.state === "AVAILABLE" || r.state === "DEGRADED") && execOk >= 1) return "AVAILABLE";
-  if (quotaMeasured) return "QUOTA";
-  if (freeExec >= 1) return "FREE";
-  if (ok7 >= 1) return "ACCESSIBLE";
-  return "UNKNOWN";
+  const quotaMeasured = !!(q && q.measured === 1 && (q.used_window || 0) < (q.limit_per_min || 0));
+  let tier = "UNKNOWN";
+  if (ok7 >= 3 && ok24 >= 1 && r.state === "AVAILABLE" && execOk >= 1) tier = "VERIFIED";
+  else if (ok24 >= 1 && (r.state === "AVAILABLE" || r.state === "DEGRADED") && execOk >= 1) tier = "AVAILABLE";
+  else if (quotaMeasured) tier = "QUOTA";
+  else if (freeExec >= 1) tier = "FREE";
+  else if (ok7 >= 1) tier = "ACCESSIBLE";
+  return { tier, ok7, ok24, execOk, freeExec, quotaMeasured };
 }
 
-async function autoPromote(db, rid) {
+async function warrantedTier(db, rid) {
+  return (await warrantedTierInfo(db, rid)).tier;
+}
+
+async function autoPromote(db, rid, tierInfo) {
   const cur = (await db.prepare("SELECT evidence_state FROM resources WHERE id=?").bind(rid).first() || {}).evidence_state || "UNKNOWN";
   if (cur === "PARKED") return cur;
-  const w = await warrantedTier(db, rid);
+  const w = tierInfo ? tierInfo.tier : await warrantedTier(db, rid);
   if (evRank(w) > evRank(cur)) {
     await setEvidence(db, rid, w, "auto-promote", "warranted by recorded observations");
     return w;
@@ -362,18 +407,35 @@ async function autoPromote(db, rid) {
 }
 
 // Notice-and-adapt: usable tiers go stale without fresh success.
-async function demoteCheck(db, rid) {
+async function demoteCheck(db, rid, tierInfo) {
   const r = await db.prepare("SELECT evidence_state FROM resources WHERE id=?").bind(rid).first();
   if (!r) return null;
   const ev = r.evidence_state;
   if (ev !== "AVAILABLE" && ev !== "VERIFIED") return ev;
-  const ok24 = (await db.prepare("SELECT COUNT(*) c FROM health_observations WHERE resource_id=? AND ok=1 AND observed_at>?").bind(rid, minutesAgo(24 * 60)).first() || {}).c || 0;
+  const ok24 = tierInfo ? tierInfo.ok24 : ((await db.prepare("SELECT COUNT(*) c FROM health_observations WHERE resource_id=? AND ok=1 AND observed_at>?").bind(rid, minutesAgo(24 * 60)).first() || {}).c || 0);
   if (ok24 === 0) {
     const down = ev === "VERIFIED" ? "AVAILABLE" : "FREE";
     await setEvidence(db, rid, down, "stale-demote", "no successful observation in 24h", true);
     return down;
   }
   return ev;
+}
+
+// Burner #3 fix (wave-29): enforce HEALTH_RETENTION_DAYS on the append-only
+// health_observations table, once per cron run. Per-resource indexed deletes
+// via idx_health_obs_resource_observed (resource_id, observed_at): seek on
+// resource_id, range on observed_at — no table scan, no new index needed.
+async function pruneHealthObservations(db) {
+  const cutoff = minutesAgo(HEALTH_RETENTION_DAYS * 24 * 60);
+  const rs = await db.prepare("SELECT id FROM resources").all();
+  let pruned = 0;
+  for (const r of (rs.results || [])) {
+    const res = await db.prepare(
+      "DELETE FROM health_observations WHERE resource_id=? AND observed_at<?"
+    ).bind(r.id, cutoff).run();
+    pruned += Number((res && res.meta && res.meta.changes) || 0);
+  }
+  return pruned;
 }
 
 // Notice-and-adapt: billing appeared on a resource we believed was free.
@@ -2458,8 +2520,9 @@ export default {
       // Claimed resources are probed by their claimant's observations, never
       // by the Worker (it holds no credential). Staleness demotion still applies.
       if (adapterName === "claimed") {
-        const prom = await autoPromote(db, r.id); // claimant observations + receipts feed the ladder
-        const dev = await demoteCheck(db, r.id);
+        const tierInfo = await warrantedTierInfo(db, r.id); // wave-29: one window computation shared below
+        const prom = await autoPromote(db, r.id, tierInfo); // claimant observations + receipts feed the ladder
+        const dev = await demoteCheck(db, r.id, tierInfo);
         out.push({ resource: r.id, skipped: "claimed — claimant observes", ev: dev || prom });
         continue;
       }
@@ -2482,15 +2545,17 @@ export default {
         if (!adapter || !adapter.probe) { out.push({ resource: r.id, skipped: "not probeable", ev }); continue; }
         const p = await adapter.probe(r);
         const o = await observe(db, r.id, p.ok, p.latency_ms, p.detail);
+        let tierInfo = null; // wave-29: computed lazily below, shared by autoPromote + demoteCheck
         if (p.ok) {
           // Ingest automatically — unless the credential is known-invalid,
           // which requires explicit re-verification, not a silent probe.
           const cs = (await db.prepare("SELECT credential_state FROM resources WHERE id=?").bind(r.id).first() || {}).credential_state;
           if ((ev === "DISCOVERED" || ev === "UNKNOWN" || ev === "PARKED") && cs !== "invalid")
             await setEvidence(db, r.id, "ACCESSIBLE", "cron-probe", `probe ok ${p.latency_ms}ms — auto-ingested`);
-          await autoPromote(db, r.id);
+          tierInfo = await warrantedTierInfo(db, r.id);
+          await autoPromote(db, r.id, tierInfo);
         }
-        await demoteCheck(db, r.id);
+        await demoteCheck(db, r.id, tierInfo);
         const cur = await db.prepare("SELECT evidence_state,state FROM resources WHERE id=?").bind(r.id).first();
         out.push({ resource: r.id, ok: p.ok, latency_ms: p.latency_ms, state: cur.state, ev: cur.evidence_state });
       } catch (e) { out.push({ resource: r.id, ok: false, error: String(e).slice(0, 120) }); }
@@ -2556,7 +2621,8 @@ export default {
       }
     }
     const billing = await billingCheck(db);
+    const pruned = await pruneHealthObservations(db); // wave-29: bounded retention for health_observations
     const discovery = await runDiscovery(db);
-    console.log("exchange cron:", JSON.stringify({ probes: out, providers, reaped, replanned, billing, discovery }));
+    console.log("exchange cron:", JSON.stringify({ probes: out, providers, reaped, replanned, billing, pruned, discovery }));
   },
 };
