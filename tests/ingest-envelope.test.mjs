@@ -186,7 +186,7 @@ async function tableCount(t) {
       actor: "luci",
       claim_id: "replay-test-2",
       status: "claimed",
-      payload: { kind: "observation", resource_id: "test-res-1", ok: true, nonce: "distinct-2" },
+      payload: { kind: "observation", resource_id: "r1", ok: true, nonce: "distinct-2" },
       prev_hash: "GENESIS",
       ...over,
     };
@@ -227,6 +227,131 @@ async function tableCount(t) {
   r = await post("/v1/observe", { resource_id: "r1", ok: true, envelope: fresh }, adminH);
   assert.equal(r.status, 409);
   ok("replay: second distinct envelope replays -> 409");
+}
+
+// --- claim binding (wave-36: closes the wave-32 next_gap 2) --------------------
+// A validly sealed envelope for a DIFFERENT claim context (transplant) must be
+// REJECTED (401) even though its signature verifies. Positive controls use
+// envelopes whose sealed claim context matches the request.
+// NOTE: the replay registry (wave-36 sibling lane) is live across this whole
+// file — every envelope below is submitted at most once per expected outcome.
+{
+  // Local mint helper: distinct seal per call (ts nonce), test-key-signed.
+  const mintBound = (over = {}) => {
+    const base = {
+      env: "lucidota-receipt/1",
+      ts: new Date().toISOString(),
+      actor: "luci",
+      claim_id: "bind-test",
+      status: "claimed",
+      payload: { kind: "observation", resource_id: "r1", ok: true },
+      prev_hash: "GENESIS",
+      ...over,
+    };
+    const payload_hash = createHash("sha256").update(canonicalJSON(base.payload), "utf8").digest("hex");
+    const withHash = { ...base, payload_hash };
+    const sig = "HS256:" + createHmac("sha256", Buffer.from(TEST_KEY, "hex"))
+      .update(canonicalJSON(withHash), "utf8").digest("hex");
+    const noseal = { ...withHash, sig };
+    const seal = createHash("sha256").update(canonicalJSON(noseal), "utf8").digest("hex");
+    return { ...noseal, seal };
+  };
+  const wbase = { worker_id: "w1", worker_secret: "s3cret" };
+
+  // --- complete: transplant (envelope for c2 on request for c1) -> 401 ---------
+  {
+    const rcptBefore = await tableCount("receipts");
+    const rejBefore = (await rejections()).filter((x) => x.route === "complete").length;
+    // Seed a second active claim so the transplant target is a real claim.
+    await db.prepare(
+      "INSERT INTO claims (claim_id,job_id,worker_id,lease_id,resource_id,status,lease_expiry,policy_snapshot) VALUES (?,?,?,?,?,?,?,?)"
+    ).bind("c2", "j1", "w1", "l2", "r1", "active", future(), "{}").run();
+    await db.prepare(
+      "INSERT INTO leases (id,job_id,resource_id,state,expires_at) VALUES (?,?,?,?,?)"
+    ).bind("l2", "j1", "r1", "active", future()).run();
+    // An execution is created at CLAIM time in the real flow — a claim
+    // without one cannot exist; seed it so completeClaimed's ex.id reads
+    // don't hit a null the protocol forbids.
+    await db.prepare(
+      "INSERT INTO executions (id,job_id,resource_id,claim_id,request_hash) VALUES (?,?,?,?,?)"
+    ).bind("e2", "j1", "r1", "c2", "req2").run();
+    const r = await post("/v1/complete",
+      { ...wbase, claim_id: "c1", worker_outcome: "SUCCEEDED", envelope: routeEnvs["complete-transplant"] }, workerH);
+    assert.equal(r.status, 401, JSON.stringify(r.body).slice(0, 200));
+    assert.match(r.body.error, /binding/);
+    assert.equal(await tableCount("receipts"), rcptBefore);
+    const rej = await rejections();
+    assert.equal(rej.filter((x) => x.route === "complete").length, rejBefore + 1);
+    assert.match(rej[rej.length - 1].reason, /binding mismatch/);
+    ok("complete: transplant (envelope c2 on request c1) -> 401, nothing stored, audited");
+  }
+
+  // --- complete: lease_id fallback resolves to the envelope's claim -> 200 ----
+  {
+    const rcptBefore = await tableCount("receipts");
+    const envC2 = mintBound({ claim_id: "c2", status: "established",
+      payload: { kind: "completion", worker_outcome: "SUCCEEDED" } });
+    const r = await post("/v1/complete",
+      { ...wbase, lease_id: "l2", worker_outcome: "SUCCEEDED", envelope: envC2 }, workerH);
+    assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 300));
+    assert.equal(await tableCount("receipts"), rcptBefore + 1);
+    ok("complete: lease_id fallback binds envelope claim c2 -> 200, receipt stored");
+  }
+
+  // --- complete: no claim context at all -> 400 fail-closed --------------------
+  {
+    const envNoCtx = mintBound({ claim_id: "c9", status: "established",
+      payload: { kind: "completion", worker_outcome: "SUCCEEDED" } });
+    const r = await post("/v1/complete",
+      { ...wbase, worker_outcome: "SUCCEEDED", envelope: envNoCtx }, workerH);
+    assert.equal(r.status, 400, JSON.stringify(r.body).slice(0, 200));
+    assert.match(r.body.error, /claim context missing/);
+    ok("complete: missing claim_id+lease_id -> 400 fail-closed");
+  }
+
+  // --- observe: transplant (payload.resource_id r2 on request r1) -> 401 ------
+  {
+    const obsBefore = await tableCount("health_observations");
+    const r = await post("/v1/observe",
+      { resource_id: "r1", ok: true, envelope: routeEnvs["observe-transplant"] }, adminH);
+    assert.equal(r.status, 401, JSON.stringify(r.body).slice(0, 200));
+    assert.match(r.body.error, /binding/);
+    assert.equal(await tableCount("health_observations"), obsBefore);
+    ok("observe: transplant (payload r2 on request r1) -> 401, nothing stored");
+  }
+
+  // --- observe: envelope without payload.resource_id -> 401 --------------------
+  {
+    const envNoRes = mintBound({ payload: { kind: "observation", ok: true } });
+    const r = await post("/v1/observe",
+      { resource_id: "r1", ok: true, envelope: envNoRes }, adminH);
+    assert.equal(r.status, 401, JSON.stringify(r.body).slice(0, 200));
+    assert.match(r.body.error, /no binding/);
+    ok("observe: envelope missing payload.resource_id -> 401 (minting-side requirement)");
+  }
+
+  // --- ballots: transplant (payload.proposition mismatch) -> 401 ---------------
+  {
+    const balBefore = await tableCount("ballots");
+    const r = await post("/v1/ballots",
+      { ballot_type: "verdict", proposition: "Is the sky blue?", voters: ["m1", "m2"],
+        envelope: routeEnvs["ballot-transplant"] }, adminH);
+    assert.equal(r.status, 401, JSON.stringify(r.body).slice(0, 200));
+    assert.match(r.body.error, /binding/);
+    assert.equal(await tableCount("ballots"), balBefore);
+    ok("ballots: transplant (different proposition) -> 401, nothing stored");
+  }
+
+  // --- ballots: envelope without payload.proposition -> 401 --------------------
+  {
+    const envNoProp = mintBound({ payload: { kind: "ballot", ballot_type: "verdict" } });
+    const r = await post("/v1/ballots",
+      { ballot_type: "verdict", proposition: "Is the sky blue?", voters: ["m1", "m2"],
+        envelope: envNoProp }, adminH);
+    assert.equal(r.status, 401, JSON.stringify(r.body).slice(0, 200));
+    assert.match(r.body.error, /no binding/);
+    ok("ballots: envelope missing payload.proposition -> 401 (minting-side requirement)");
+  }
 }
 
 console.log(`\n${passed} route checks green — ingest boundary enforces envelope provenance`);

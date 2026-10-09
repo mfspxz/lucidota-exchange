@@ -277,7 +277,97 @@ async function requireEnvelope(db, route, b, env) {
     await recordEnvelopeRejection(db, route, b, "replay registry full — refusing new ingest");
     return { error: "replay registry full — refusing new ingest (fail-closed)", status: 503 };
   }
+  // Claim binding (wave-36): a well-formed, properly sealed envelope can
+  // still be TRANSPLANTED — lifted from claim A's request and submitted on
+  // claim B's. The envelope must attest to THIS request's claim context.
+  try {
+    await checkClaimBinding(db, route, b, e);
+  } catch (err) {
+    const why = String((err && err.message) || err).slice(0, 200);
+    await recordEnvelopeRejection(db, route, b, "binding: " + why);
+    const status = (err && err.status) || 401;
+    const prefix = status === 400 ? "claim context missing: " : "envelope rejected: ";
+    return { error: prefix + why, status };
+  }
   return { ok: true };
+}
+
+/* ------------------------------------------------------------------ */
+/* Envelope<->request claim binding (wave-36, next_gap 2 of the        */
+/* wave-32 envelope-ingest receipt).                                   */
+/*                                                                     */
+/* verifyReceiptEnvelope proves an envelope is well-formed and sealed   */
+/* by the authority key. It does NOT prove the envelope belongs to     */
+/* THIS request. Without binding, a valid envelope for claim A can be  */
+/* transplanted onto a request for claim B. Binding rule per route     */
+/* (fail-closed — no grace for missing context):                       */
+/*   complete: e.claim_id === request claim_id                         */
+/*             (b.claim_id, else the claim resolved from b.lease_id —  */
+/*             the same transitional fallback completeClaimed uses)    */
+/*   observe:  e.payload.resource_id === b.resource_id                 */
+/*   ballots:  e.payload.proposition === b.proposition                 */
+/* The envelope fields are sealed by the authority sig, so a match     */
+/* proves the authority attested to this request's claim context.      */
+/* Missing request context -> 400 (the downstream handlers already    */
+/* 400 on the same missing fields, so no honest caller is newly        */
+/* broken). Envelope missing the binding field, or mismatch -> 401.    */
+/* Minting-side requirement this documents: observe envelopes MUST     */
+/* carry payload.resource_id, ballot envelopes MUST carry              */
+/* payload.proposition, completion envelopes MUST carry claim_id.      */
+/* ------------------------------------------------------------------ */
+class ClaimBindingError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "ClaimBindingError";
+    this.status = status;
+  }
+}
+
+async function claimContextFor(db, route, b) {
+  if (route === "complete") {
+    let cid = (b && typeof b.claim_id === "string" && b.claim_id) || null;
+    if (!cid && b && typeof b.lease_id === "string" && b.lease_id) {
+      const c = await db.prepare(
+        "SELECT claim_id FROM claims WHERE lease_id=? AND status='active'"
+      ).bind(b.lease_id).first();
+      cid = (c && typeof c.claim_id === "string" && c.claim_id) || null;
+    }
+    if (!cid) throw new ClaimBindingError(
+      "complete requires claim_id (or a resolvable lease_id)", 400);
+    return { field: "claim_id", expect: cid };
+  }
+  if (route === "observe") {
+    const rid = (b && typeof b.resource_id === "string" && b.resource_id) || null;
+    if (!rid) throw new ClaimBindingError("observe requires resource_id", 400);
+    return { field: "payload.resource_id", expect: rid };
+  }
+  if (route === "ballots") {
+    const prop = (b && typeof b.proposition === "string" && b.proposition) || null;
+    if (!prop) throw new ClaimBindingError("ballots requires proposition", 400);
+    return { field: "payload.proposition", expect: prop };
+  }
+  throw new ClaimBindingError("unknown route " + JSON.stringify(route), 400);
+}
+
+function envelopeBindingValue(e, field) {
+  if (field === "claim_id")
+    return (typeof e.claim_id === "string" && e.claim_id) || null;
+  const p = e.payload;
+  if (!p || typeof p !== "object" || Array.isArray(p)) return null;
+  if (field === "payload.resource_id")
+    return (typeof p.resource_id === "string" && p.resource_id) || null;
+  if (field === "payload.proposition")
+    return (typeof p.proposition === "string" && p.proposition) || null;
+  return null;
+}
+
+async function checkClaimBinding(db, route, b, e) {
+  const { field, expect } = await claimContextFor(db, route, b);
+  const got = envelopeBindingValue(e, field);
+  if (got === null) throw new ClaimBindingError(
+    `envelope carries no binding for ${route} (missing ${field}) — minting-side requirement`, 401);
+  if (got !== expect) throw new ClaimBindingError(
+    `claim binding mismatch on ${field}: envelope ${JSON.stringify(got)} != request ${JSON.stringify(expect)}`, 401);
 }
 
 /* ------------------------------------------------------------------ */

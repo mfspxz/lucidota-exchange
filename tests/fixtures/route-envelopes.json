@@ -3,7 +3,7 @@
   "env": "lucidota-receipt/1",
   "ts": "2026-10-09T09:00:00Z",
   "actor": "luci",
-  "claim_id": "test-claim-1",
+  "claim_id": "c1",
   "status": "established",
   "payload": {
    "kind": "completion",
@@ -11,39 +11,87 @@
   },
   "payload_hash": "028c0459a14f9a0e71070ee257b6d7ab7623b02583fa6ab14a29aebac84dadba",
   "prev_hash": "GENESIS",
-  "sig": "HS256:bc2141d1d8fbfe2ba923ad6101e844a9e8d699d6e3db86cfd35e809fd656bbbf",
-  "seal": "36757cbb38c72c29bd2cb2035c4aca8d37a455d0477cf687c37b9eaaae37c227"
+  "sig": "HS256:1b3020b04bb134bd859b7cefe89510493cdc79b0037eeac2a965dda171512f0d",
+  "seal": "d0478fba468caeb6693a680b4c876153a23e95abf5987361d3666b03f1365ba6"
+ },
+ "complete-transplant": {
+  "env": "lucidota-receipt/1",
+  "ts": "2026-10-09T09:00:00Z",
+  "actor": "luci",
+  "claim_id": "c2",
+  "status": "established",
+  "payload": {
+   "kind": "completion",
+   "worker_outcome": "SUCCEEDED"
+  },
+  "payload_hash": "028c0459a14f9a0e71070ee257b6d7ab7623b02583fa6ab14a29aebac84dadba",
+  "prev_hash": "GENESIS",
+  "sig": "HS256:bc953643a2b611a3f47ac84e0bf2bf8a63100b765901e8a4e55e463acd0fb6c9",
+  "seal": "ddfa4144f4afd0a74b00c51673d787419216a1bb4228cd1aea6c9e7957b59a60"
  },
  "observe-legit": {
   "env": "lucidota-receipt/1",
-  "ts": "2026-10-09T09:00:01Z",
+  "ts": "2026-10-09T09:00:00Z",
   "actor": "luci",
   "claim_id": "test-observe-1",
   "status": "claimed",
   "payload": {
    "kind": "observation",
-   "resource_id": "test-res-1",
+   "resource_id": "r1",
    "ok": true
   },
-  "payload_hash": "de63c27eb51f7bcdf7b70a49955a2af46a785f76b3181398efa0f42d3e2398f2",
+  "payload_hash": "348c34272aff2af7910706e40cc4ce9007f0994ce2598df5c986f31bdc6b1743",
   "prev_hash": "GENESIS",
-  "sig": "HS256:4e5aa08b293ab729600aa536ccbbcbe7185f8dda7cd9903337b5bbf8d60e6bc6",
-  "seal": "a67ae2436e72bede1791d12942435523eaba169a7076bfc97b8903549cb981c7"
+  "sig": "HS256:90e4d3b0e7220541161213a1069a7f25a93e8ecdbe84398398abd64abf980dee",
+  "seal": "3c6e8f9d7538d2ff60f817efdfa35013f64eb2703762273084543ed53a3ceeca"
+ },
+ "observe-transplant": {
+  "env": "lucidota-receipt/1",
+  "ts": "2026-10-09T09:00:00Z",
+  "actor": "luci",
+  "claim_id": "test-observe-1",
+  "status": "claimed",
+  "payload": {
+   "kind": "observation",
+   "resource_id": "r2",
+   "ok": true
+  },
+  "payload_hash": "c8ba9109d7d0a244c691124e75fbc7b378f7fa536d84abd479176222243743d3",
+  "prev_hash": "GENESIS",
+  "sig": "HS256:825792c5e94d7161aa534e6b3cc5c3887376f7a3c7790293f71a615941e044b3",
+  "seal": "7a6fa650d8edcd50381a8cd65b4380babdcf02057ea2998f0b41dfd1badcd4fe"
  },
  "ballot-legit": {
   "env": "lucidota-receipt/1",
-  "ts": "2026-10-09T09:00:02Z",
+  "ts": "2026-10-09T09:00:00Z",
   "actor": "luci",
   "claim_id": "test-ballot-1",
   "status": "claimed",
   "payload": {
    "kind": "ballot",
-   "ballot_type": "verdict"
+   "ballot_type": "verdict",
+   "proposition": "Is the sky blue?"
   },
-  "payload_hash": "55255eccfa4e442b517efb2d20873bc028775337891301d57cdb7a28c24f1077",
+  "payload_hash": "4b2848a7d1bcd76bfa745552291220781a46edbb2e7a82c9e2989a8e58f3a885",
   "prev_hash": "GENESIS",
-  "sig": "HS256:0386566f22d148ce77b3301b416ff5719f0a492d8b0bf9ccdc70c823e25496e0",
-  "seal": "356f8cebbcbc91f008d6b7bbc6cf2691519de8cd668e806d85834852be3be364"
+  "sig": "HS256:3643375cd40960a94763c410f7a21a96bd5d8cb28681f3ab8cb9a90c47f1358d",
+  "seal": "752a38e402f802ef6cd983240c132e856a0687919f571d4cad63b208390589ad"
+ },
+ "ballot-transplant": {
+  "env": "lucidota-receipt/1",
+  "ts": "2026-10-09T09:00:00Z",
+  "actor": "luci",
+  "claim_id": "test-ballot-1",
+  "status": "claimed",
+  "payload": {
+   "kind": "ballot",
+   "ballot_type": "verdict",
+   "proposition": "Is the moon made of cheese?"
+  },
+  "payload_hash": "83d6527c8a167622d035b31c29f70ec97bad933665b2d873d529bd45316ac747",
+  "prev_hash": "GENESIS",
+  "sig": "HS256:13cb862906dec6a3d787e650eded4b3f42a3da5fc3acc593ea5c4e49921beb90",
+  "seal": "684e790d8c2d0a36c22f54ad9c15e1e8c71400c07008e8011b47de1491b07af1"
  },
  "chain": [
   {
