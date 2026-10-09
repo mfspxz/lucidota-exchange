@@ -10,7 +10,7 @@ database_name = "exchange"
 database_id = "0ea89801-9b0a-4efa-9d2f-170d7d285e69"
 
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/30 * * * *"]
 
 # Secrets (set via: python3 set-secret.py --script lucidota-exchange --name EXCHANGE_KEY)
 #   EXCHANGE_KEY — required Bearer <redacted> for all /v1/* routes. Missing = 503 fail-closed.
