@@ -929,12 +929,31 @@ async function completeClaimed(db, b, worker) {
 
   // A 429 is a measured quota ceiling: the rate that triggered it is an
   // honest upper bound. Record it as measured, not asserted.
+  // SPREE FIX (2026-10-09): require corroboration before throttling.
+  // A single worker's 429 is recorded as evidence only; throttle requires
+  // 2+ independent worker reports or a governor observation. Prevents a
+  // compromised worker from DoSing shared resources with fake 429s.
   if (error_class === "RATE_LIMITED") {
-    const w = await db.prepare("SELECT used_window FROM quotas WHERE resource_id=?").bind(resource.id).first();
-    const ceil = Math.max(1, (w && w.used_window) || 1);
-    const has = await db.prepare("SELECT resource_id FROM quotas WHERE resource_id=?").bind(resource.id).first();
-    if (has) await db.prepare("UPDATE quotas SET limit_per_min=?, measured=1, measured_at=? WHERE resource_id=?").bind(ceil, now(), resource.id).run();
-    else await db.prepare("INSERT INTO quotas (resource_id, limit_per_min, measured, measured_at) VALUES (?,?,1,?)").bind(resource.id, ceil, now()).run();
+    const recent = await db.prepare(
+      `SELECT detail FROM health_observations WHERE resource_id=?
+       ORDER BY observed_at DESC LIMIT 5`
+    ).bind(resource.id).all();
+    const rows = recent.results || [];
+    let consecWorker = 0;
+    for (const h of rows) {
+      const d = h.detail || "";
+      if (d.startsWith("claimant:") && d.includes("RATE_LIMITED")) consecWorker++;
+      else break;
+    }
+    const governorSeen = rows.some((h) => !(h.detail || "").startsWith("claimant:") && (h.detail || "").includes("RATE_LIMITED"));
+    if (consecWorker >= 2 || governorSeen) {
+      const w = await db.prepare("SELECT used_window FROM quotas WHERE resource_id=?").bind(resource.id).first();
+      const ceil = Math.max(1, (w && w.used_window) || 1);
+      const has = await db.prepare("SELECT resource_id FROM quotas WHERE resource_id=?").bind(resource.id).first();
+      if (has) await db.prepare("UPDATE quotas SET limit_per_min=?, measured=1, measured_at=? WHERE resource_id=?").bind(ceil, now(), resource.id).run();
+      else await db.prepare("INSERT INTO quotas (resource_id, limit_per_min, measured, measured_at) VALUES (?,?,1,?)").bind(resource.id, ceil, now()).run();
+    }
+    // Uncorroborated 429: logged as evidence, no throttle applied.
   }
 
   // Requested vs actually-executed capacity (W9). The receipt exposes the
@@ -1078,10 +1097,22 @@ async function completeClaimed(db, b, worker) {
     await db.prepare("UPDATE receipts SET ballot_id=? WHERE id=?")
       .bind(spec.ballot_id, receipt_id).run();
   if (ternary_verdict === -1) {
+    // SPREE FIX (2026-10-09): -1 is a PROPOSAL, not a verdict. A single
+    // worker's -1 marks dependents as pending_disproof; prune requires
+    // corroboration from a second independent worker. Prevents a compromised
+    // worker from destroying legitimate work with one malicious completion.
     const deps = await db.prepare(
       `SELECT id FROM jobs WHERE state='deferred' AND id != ?
        AND (input_hash = ? OR json_extract(spec, '$.depends_on') = ?)`
     ).bind(job.id, ex.request_hash, job.id).all();
+    // Check for existing disproof proposal on this input_hash
+    const existing = await db.prepare(
+      `SELECT COUNT(*) as c FROM receipts WHERE ternary_verdict=-1
+       AND json_extract(decision, '$.disproof_proposal') = 1
+       AND job_id IN (SELECT id FROM jobs WHERE input_hash = ?)`
+    ).bind(ex.request_hash).first();
+    const votes = (existing?.c || 0) + 1;
+    if (votes >= 2) {
     for (const dep of (deps.results || [])) {
       await db.prepare("UPDATE jobs SET state='failed' WHERE id=?").bind(dep.id).run();
       await db.prepare("UPDATE leases SET state='released' WHERE job_id=? AND state='active'").bind(dep.id).run();
@@ -1101,6 +1132,11 @@ async function completeClaimed(db, b, worker) {
       await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
         .bind("job:" + job.id, state, state, "auto-prune",
           `verdict -1 pruned ${(deps.results || []).length} dependent job(s)`).run();
+    } else {
+      // Single -1: record as proposal, do NOT prune. Awaiting corroboration.
+      await db.prepare("UPDATE receipts SET decision=json_patch(decision, ?) WHERE id=?")
+        .bind(JSON.stringify({ disproof_proposal: 1, votes: 1 }), receipt_id).run();
+    }
   }
   if (ternary_verdict === 0 && !failed) {
     const evDepth = (spec.evidence_depth || 0);
