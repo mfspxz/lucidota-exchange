@@ -2,29 +2,25 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.refresh-mirror:external"
+      "exchange.refresh-mirror:write"
     ],
-    "mutation_class": "external_effect",
+    "mutation_class": "write",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "er",
   "contracts": [
     {
-      "description": "Refresh the D1 mirror",
+      "description": "Refresh the D1 mirror snapshot",
       "input_schema": {
-        "properties": {
-          "full": {
-            "type": "boolean"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
-      "mutation_class": "external_effect",
+      "mutation_class": "write",
       "op": "refresh",
-      "required_capability": "exchange.refresh-mirror:external"
+      "required_capability": "exchange.refresh-mirror:write"
     }
   ],
-  "description": "Refreshes the D1 mirror database (network egress).",
+  "description": "Re-snapshot live D1 to d1-mirror.db (post-freeze).",
   "name": "exchange-refresh-mirror",
   "receipt_policy": {
     "algorithm": "sha256",

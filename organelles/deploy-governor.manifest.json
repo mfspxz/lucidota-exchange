@@ -2,32 +2,29 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.deploy-governor:write"
+      "exchange.deploy-governor:deploy"
     ],
-    "mutation_class": "write",
+    "mutation_class": "external_effect",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "eo",
   "contracts": [
     {
-      "description": "Evaluate a deploy request",
+      "description": "Upload worker.js + D1 binding, set cron triggers",
       "input_schema": {
         "properties": {
-          "plan": {
-            "type": "string"
-          },
-          "target": {
+          "worker": {
             "type": "string"
           }
         },
         "type": "object"
       },
-      "mutation_class": "write",
+      "mutation_class": "external_effect",
       "op": "govern",
-      "required_capability": "exchange.deploy-governor:write"
+      "required_capability": "exchange.deploy-governor:deploy"
     }
   ],
-  "description": "Governs deploy actions (guardrails before deploy).",
+  "description": "Deploy the Exchange governor worker.js via the Cloudflare Workers API.",
   "name": "exchange-deploy-governor",
   "receipt_policy": {
     "algorithm": "sha256",

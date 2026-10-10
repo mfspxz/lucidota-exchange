@@ -5,23 +5,19 @@
     "mutation_class": "read_only",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "ed",
   "contracts": [
     {
-      "description": "Discover local compute capacity",
+      "description": "Scan workspace skills for vault-connected capabilities",
       "input_schema": {
-        "properties": {
-          "scope": {
-            "type": "string"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "mutation_class": "read_only",
       "op": "discover"
     }
   ],
-  "description": "Discovers local compute capacity/claimants.",
+  "description": "Local skill-discovery sidecar for vault-connected API capabilities.",
   "name": "exchange-discover-local",
   "receipt_policy": {
     "algorithm": "sha256",

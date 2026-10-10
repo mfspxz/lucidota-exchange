@@ -2,18 +2,18 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.mint-submit:external"
+      "exchange.mint-submit:submit"
     ],
     "mutation_class": "external_effect",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "em",
   "contracts": [
     {
-      "description": "Submit a result receipt",
+      "description": "Submit queued mint jobs (priority order)",
       "input_schema": {
         "properties": {
-          "receipt": {
+          "queue": {
             "type": "string"
           }
         },
@@ -21,10 +21,10 @@
       },
       "mutation_class": "external_effect",
       "op": "submit",
-      "required_capability": "exchange.mint-submit:external"
+      "required_capability": "exchange.mint-submit:submit"
     }
   ],
-  "description": "Submits mint results/receipts to the exchange.",
+  "description": "Batch-submit mint jobs from the mint queue to the Exchange.",
   "name": "exchange-mint-submit",
   "receipt_policy": {
     "algorithm": "sha256",

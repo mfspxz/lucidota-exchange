@@ -1,17 +1,17 @@
 {
   "authority": {
-    "declared_valence": "proven",
+    "declared_valence": "candidate",
     "granted_capabilities": [],
     "mutation_class": "read_only",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "eb",
   "contracts": [
     {
-      "description": "Compute ballot cost rollup",
+      "description": "Roll up ballot costs from vote records",
       "input_schema": {
         "properties": {
-          "ballots": {
+          "ballot": {
             "type": "string"
           }
         },
@@ -21,7 +21,7 @@
       "op": "rollup"
     }
   ],
-  "description": "Deterministic ballot/cost rollup computation.",
+  "description": "Ballot cost accounting rollup (read-only).",
   "name": "exchange-ballot-cost-rollup",
   "receipt_policy": {
     "algorithm": "sha256",

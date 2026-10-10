@@ -2,21 +2,18 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.mint-claimant:external"
+      "exchange.mint-claimant:claim"
     ],
     "mutation_class": "external_effect",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "ec",
   "contracts": [
     {
-      "description": "Claim a work unit",
+      "description": "Claim a mint task (PICKUP -> POST /v1/claim)",
       "input_schema": {
         "properties": {
-          "claimant": {
-            "type": "string"
-          },
-          "unit_id": {
+          "task": {
             "type": "string"
           }
         },
@@ -24,10 +21,10 @@
       },
       "mutation_class": "external_effect",
       "op": "claim",
-      "required_capability": "exchange.mint-claimant:external"
+      "required_capability": "exchange.mint-claimant:claim"
     }
   ],
-  "description": "Mint exchange claimant: claims work units.",
+  "description": "Worker Protocol v1 claimant for lazy artifact minting.",
   "name": "exchange-mint-claimant",
   "receipt_policy": {
     "algorithm": "sha256",

@@ -1,27 +1,30 @@
 {
   "authority": {
     "declared_valence": "candidate",
-    "granted_capabilities": [],
+    "granted_capabilities": [
+      "exchange.intelligence-per-byte:run"
+    ],
     "mutation_class": "read_only",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "ei",
   "contracts": [
     {
-      "description": "Compute intel-per-byte",
+      "description": "Run the intel-per-byte benchmark",
       "input_schema": {
         "properties": {
-          "dataset": {
+          "job": {
             "type": "string"
           }
         },
         "type": "object"
       },
       "mutation_class": "read_only",
-      "op": "compute"
+      "op": "compute",
+      "required_capability": "exchange.intelligence-per-byte:run"
     }
   ],
-  "description": "Computes intelligence-per-byte metrics.",
+  "description": "Benchmark harness for Exchange jobs (intel-per-byte metric).",
   "name": "exchange-intelligence-per-byte",
   "receipt_policy": {
     "algorithm": "sha256",

@@ -7,16 +7,12 @@
     "mutation_class": "write",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "eg",
   "contracts": [
     {
-      "description": "Sync evidence records",
+      "description": "Sync evidence graph from D1 mirror",
       "input_schema": {
-        "properties": {
-          "source": {
-            "type": "string"
-          }
-        },
+        "properties": {},
         "type": "object"
       },
       "mutation_class": "write",
@@ -24,7 +20,7 @@
       "required_capability": "exchange.evidence-graph-sync:write"
     }
   ],
-  "description": "Syncs evidence into the evidence graph DB.",
+  "description": "Mirror ballot/receipt/evidence edges from the D1 mirror into evidence-graph.db.",
   "name": "exchange-evidence-graph-sync",
   "receipt_policy": {
     "algorithm": "sha256",

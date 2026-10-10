@@ -33,7 +33,7 @@
     "policy": "subprocess-only"
   },
   "repo": "exchange",
-  "repo_head": "1d3bcd13c5cddb581eaefb3252312eb7535e3643",
+  "repo_head": "29b54c97c7cc783ab4305871a7983a273a169a0e",
   "resource_envelope": {
     "cpu_cores": 2,
     "io_mb": 512,
@@ -46,5 +46,48 @@
     "note": "capability names only in manifests; secret values never in env, logs, receipts, or manifests",
     "policy": "vault-ref-only"
   },
-  "tier": "B"
+  "tier": "B",
+  "units": {
+    "exchange-ballot-cost-rollup": {
+      "codon": "eb",
+      "wall_time_secs": 300
+    },
+    "exchange-deploy-governor": {
+      "codon": "eo",
+      "note": "Cloudflare API egress; deploy gated",
+      "wall_time_secs": 300
+    },
+    "exchange-discover-local": {
+      "codon": "ed",
+      "wall_time_secs": 120
+    },
+    "exchange-evidence-graph-sync": {
+      "codon": "eg",
+      "wall_time_secs": 600
+    },
+    "exchange-intelligence-per-byte": {
+      "codon": "ei",
+      "wall_time_secs": 900
+    },
+    "exchange-mint-claimant": {
+      "codon": "ec",
+      "wall_time_secs": 300
+    },
+    "exchange-mint-submit": {
+      "codon": "em",
+      "wall_time_secs": 600
+    },
+    "exchange-mint-worker": {
+      "codon": "ew",
+      "wall_time_secs": 600
+    },
+    "exchange-probe-harness": {
+      "codon": "ep",
+      "wall_time_secs": 900
+    },
+    "exchange-refresh-mirror": {
+      "codon": "er",
+      "wall_time_secs": 900
+    }
+  }
 }

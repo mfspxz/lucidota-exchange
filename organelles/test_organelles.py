@@ -67,6 +67,8 @@ def test_adapter_smoke():
                        input=json.dumps(req) + "\n", capture_output=True, text=True, timeout=30)
     resp = json.loads(p.stdout.strip().splitlines()[-1])
     assert resp["id"] == 7 and resp["ok"] is True, resp
+    assert resp["receipt"].startswith("adapter-interim:sha256:"), resp
+    assert resp["error"] is None, resp
 
 def test_no_secrets():
     """No secret-shaped material in manifests."""

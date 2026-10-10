@@ -2,29 +2,29 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.mint-worker:external"
+      "exchange.mint-worker:execute"
     ],
-    "mutation_class": "external_effect",
+    "mutation_class": "write",
     "required_capability": null
   },
-  "codon": "ex",
+  "codon": "ew",
   "contracts": [
     {
-      "description": "Execute a claimed work unit",
+      "description": "Mint/verify one artifact job",
       "input_schema": {
         "properties": {
-          "unit_id": {
+          "job": {
             "type": "string"
           }
         },
         "type": "object"
       },
-      "mutation_class": "external_effect",
+      "mutation_class": "write",
       "op": "execute",
-      "required_capability": "exchange.mint-worker:external"
+      "required_capability": "exchange.mint-worker:execute"
     }
   ],
-  "description": "Mint exchange worker: executes claimed work units.",
+  "description": "Purely deterministic artifact minting (sha256-verify + report).",
   "name": "exchange-mint-worker",
   "receipt_policy": {
     "algorithm": "sha256",
