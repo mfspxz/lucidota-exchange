@@ -221,17 +221,21 @@ async function recordEnvelopeRejection(db, route, b, reason) {
 /* evicting-and-silently-re-admitting replays. Entries expire by TTL   */
 /* with a sweep on each check.                                         */
 /*                                                                     */
-/* HONEST LIMIT: this registry is per-isolate memory (workerd runs     */
-/* many isolates; the node harness runs one). Cross-isolate replay     */
-/* needs a D1-backed seen-seals table — filed as the CF-gated          */
-/* live-D1 follow-up, not half-built here.                            */
+/* DURABLE REGISTRY (hardening 2026-10-10, external review P1/P2):     */
+/* the per-isolate map above is now only the fast path. The arbiter    */
+/* is D1 seal_registry: one atomic INSERT..ON CONFLICT DO NOTHING per  */
+/* ingest (changes=0 => replay, global across isolates). Retention is  */
+/* bounded (pruneSealRegistry in scheduled(), 1 cheap DELETE per cron */
+/* run). If D1 is unreachable the ingest is refused 503 — fail-closed, */
+/* never fail-open.                                                    */
 /*                                                                     */
 /* HTTP mapping: missing envelope 400 / invalid 401 / replay 409 /     */
-/* unprovisioned key 503 / registry-full 503.                          */
+/* unprovisioned key 503 / registry-full 503 / registry-unavailable    */
+/* 503.                                                                */
 /* ------------------------------------------------------------------ */
 const REPLAY_TTL_MS = 60 * 60 * 1000;
 const REPLAY_MAX_SEEN = 10000;
-const _seenSeals = new Map(); // seal -> first-seen epoch ms
+const _seenSeals = new Map(); // seal -> first-seen epoch ms (per-isolate fast path)
 
 function _sweepSeenSeals(nowMs) {
   for (const [s, t] of _seenSeals) {
@@ -239,14 +243,39 @@ function _sweepSeenSeals(nowMs) {
   }
 }
 
-/** @returns {{ok:true}|{replay:true}|{full:true}} */
-function checkReplay(seal) {
+/** Durable replay check: per-isolate memory fast path, D1 seal_registry arbiter.
+ *  @returns {{ok:true}|{replay:true}|{full:true}|{unavailable:true}} */
+async function checkReplayDb(db, seal) {
   const nowMs = Date.now();
   _sweepSeenSeals(nowMs);
   if (_seenSeals.has(seal)) return { replay: true };
   if (_seenSeals.size >= REPLAY_MAX_SEEN) return { full: true };
+  try {
+    const ins = await db.prepare(
+      "INSERT INTO seal_registry (seal, first_seen) VALUES (?, ?) ON CONFLICT(seal) DO NOTHING"
+    ).bind(seal, nowMs).run();
+    if ((((ins.meta) || {}).changes || 0) === 0) {
+      _seenSeals.set(seal, nowMs); // remember the verdict locally too
+      return { replay: true };
+    }
+  } catch (e) {
+    return { unavailable: true }; // D1 error => refuse ingest, fail-closed
+  }
   _seenSeals.set(seal, nowMs);
   return { ok: true };
+}
+
+/** Bounded retention for the durable seal registry: one cheap DELETE per
+ *  cron run, capped at 500 rows. Seals older than the replay TTL are dead
+ *  weight — a replay older than the TTL is already outside the threat
+ *  window the registry exists to close. */
+async function pruneSealRegistry(db) {
+  const cutoff = Date.now() - REPLAY_TTL_MS;
+  const r = await db.prepare(
+    `DELETE FROM seal_registry WHERE seal IN (
+       SELECT seal FROM seal_registry WHERE first_seen < ? LIMIT 500)`
+  ).bind(cutoff).run();
+  return (((r.meta) || {}).changes || 0);
 }
 
 async function requireEnvelope(db, route, b, env) {
@@ -268,7 +297,7 @@ async function requireEnvelope(db, route, b, env) {
     return { error: "envelope rejected: " + why, status: 401 };
   }
   // verifyEnvelope passed: e.seal is the verified content hash of the envelope.
-  const rp = checkReplay(e.seal);
+  const rp = await checkReplayDb(db, e.seal);
   if (rp.replay) {
     await recordEnvelopeRejection(db, route, b, "replay: envelope seal already seen");
     return { error: "envelope replay rejected: this envelope was already submitted", status: 409 };
@@ -276,6 +305,10 @@ async function requireEnvelope(db, route, b, env) {
   if (rp.full) {
     await recordEnvelopeRejection(db, route, b, "replay registry full — refusing new ingest");
     return { error: "replay registry full — refusing new ingest (fail-closed)", status: 503 };
+  }
+  if (rp.unavailable) {
+    await recordEnvelopeRejection(db, route, b, "replay registry unavailable — refusing new ingest");
+    return { error: "replay registry unavailable — refusing new ingest (fail-closed)", status: 503 };
   }
   // Claim binding (wave-36): a well-formed, properly sealed envelope can
   // still be TRANSPLANTED — lifted from claim A's request and submitted on
@@ -498,6 +531,16 @@ async function migrate(db) {
   await db.prepare(`CREATE TABLE IF NOT EXISTS envelope_rejections (
     id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT, route TEXT, reason TEXT,
     claim_id TEXT, actor TEXT)`).run();
+  // HARDENING (2026-10-10, external review P1/P2): durable replay registry.
+  // The per-isolate _seenSeals map cannot stop a replay that lands on a
+  // different isolate. seal_registry makes the seal-uniqueness check atomic
+  // and global: INSERT..ON CONFLICT DO NOTHING is the arbiter (changes=0 =>
+  // replay). D1-budget note: one PK INSERT per envelope ingest (a write,
+  // not a read — writes are 100K/day free); the hot path checks isolate
+  // memory first and never reads D1. Bounded retention via
+  // pruneSealRegistry() in scheduled().
+  await db.prepare(`CREATE TABLE IF NOT EXISTS seal_registry (
+    seal TEXT PRIMARY KEY, first_seen INTEGER NOT NULL)`).run();
   const pol = await db.prepare("SELECT id FROM ballot_policy WHERE id='default'").first();
   if (!pol) await db.prepare(
     "INSERT INTO ballot_policy (id,voters,quorum_rule,deadline_s,tie_policy) VALUES (?,?,?,?,?)"
@@ -2937,7 +2980,8 @@ export default {
     }
     const billing = await billingCheck(db);
     const pruned = await pruneHealthObservations(db); // wave-29: bounded retention for health_observations
+    const sealsPruned = await pruneSealRegistry(db); // hardening 2026-10-10: bounded retention for seal_registry
     const discovery = await runDiscovery(db);
-    console.log("exchange cron:", JSON.stringify({ probes: out, providers, reaped, replanned, billing, pruned, discovery }));
+    console.log("exchange cron:", JSON.stringify({ probes: out, providers, reaped, replanned, billing, pruned, sealsPruned, discovery }));
   },
 };

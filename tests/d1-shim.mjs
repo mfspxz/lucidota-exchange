@@ -82,6 +82,9 @@ const DDL = [
   `CREATE TABLE IF NOT EXISTS envelope_rejections (
      id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT, route TEXT, reason TEXT,
      claim_id TEXT, actor TEXT)`,
+  // Hardening 2026-10-10: durable replay registry (worker.js migrate()).
+  `CREATE TABLE IF NOT EXISTS seal_registry (
+     seal TEXT PRIMARY KEY, first_seen INTEGER NOT NULL)`,
 ];
 
 export function makeD1() {
