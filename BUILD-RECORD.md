@@ -143,3 +143,18 @@ D1: exchange (0ea89801-9b0a-4efa-9d2f-170d7d285e69) — 10 tables
 - No paid resources registered; external providers (Oracle, NVIDIA, Kaggle, HF, GitHub Actions) need Zackary's accounts — BLOCKED
 - assetStorage on cute-city: root cause found (missing BUCKET R2 binding), repair BLOCKED on token scope (R2 403)
 - cute-city / email-forwarder / saltspring-slasher / tentacle-ai-router: SOURCE LOST, deployed artifacts preserved
+
+## Amendment 2026-10-10 — cron cadence (drift resolved, external review VERIFY item)
+- The "5-min cron" references above describe the loop as built 2026-10-06 (v0.4 era).
+- 2026-10-09: cron throttled */5 -> */30 (commit 64b31c1) — the 5-min loop burned
+  ~5.3M D1 rows_read/day vs the 5M free quota. Deliberate, burn-driven, not drift.
+- Verified 2026-10-10 via Cloudflare API (read-only):
+  GET /accounts/243aabef9144fd3b8dd334cb19319e75/workers/scripts/lucidota-exchange/schedules
+  -> [{"cron":"*/30 * * * *","created_on":"2026-10-09T16:24:01.07044Z",
+       "modified_on":"2026-10-09T16:24:01.07044Z"}].
+  Deployed == wrangler.toml == */30. No deployment drift; the drift was stale
+  comments only (fixed in worker.js this date).
+- Intended cadence is now */30 (burn-safe per the standing D1-leak directive).
+  The replan/recovery loop — zombie sweep (sweepExpiredClaims incl. stuck
+  'completing' recovery), orphan reaper, bounded replan (2/run, 8 defers max),
+  seal-registry retention — runs inside scheduled() at that cadence.

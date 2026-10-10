@@ -58,7 +58,8 @@
  *   GET  /v1/receipts?job=    → receipts
  *   GET  /v1/receipts/:id/verify → independent receipt verification
  *   POST /v1/observe          → manual health observation
- * Cron (every 5 min)          → OBSERVE → CLASSIFY → UPDATE → REPLAN loop:
+ * Cron (every 30 min — */30, burn-safe since 2026-10-09; the old 5-min
+ * loop blew 5.3M D1 reads/day vs the 5M free quota) → OBSERVE → CLASSIFY → UPDATE → REPLAN loop:
  *   tier-based probing, throttle/exhaust recheck, credential-disable,
  *   provider-down detection, deferred-job replan, billing detection,
  *   discovery-source ingestion. No human prompt required.
@@ -211,7 +212,7 @@ async function recordEnvelopeRejection(db, route, b, reason) {
 /* addressed, so a byte-identical replay hashes to the same key).      */
 /*                                                                     */
 /* Freshness window: REPLAY_TTL_MS = 1h. Justification: the exchange's */
-/* own cadence is minutes (5-min cron, worker retries within minutes), */
+/* own cadence is tens of minutes (30-min cron since 2026-10-09, worker retries within minutes), */
 /* not days — PL's 24h STALE-EXEC window is the wrong analogy here. 1h */
 /* covers every legitimate retry horizon and the plausible            */
 /* capture→reuse attack cycle while keeping the bound trivial.         */
@@ -2847,7 +2848,9 @@ export default {
     catch (e) { return json({ error: "exchange fault: " + String(e).slice(0, 300) }, 500); }
   },  async scheduled(event, env) {
     // REACTION LOOP: OBSERVE → CLASSIFY → UPDATE → REPLAN → (EXECUTE) →
-    // VERIFY → LEARN → OBSERVE. Runs every 5 min, no human prompt.
+    // VERIFY → LEARN → OBSERVE. Runs every 30 min (*/30 — burn-safe;
+    // the 5-min loop was throttled 2026-10-09 after 5.3M D1 reads/day vs
+    // the 5M free quota), no human prompt.
     // - tier-based probing (usable = tight, leads = slow, parked = daily)
     // - THROTTLED recheck after backoff lifts; EXHAUSTED recheck after suspension
     // - credential-invalid stays disabled until explicit re-verify
