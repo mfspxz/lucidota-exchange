@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.intelligence-per-byte:run"
+      "exchange.intelligence-per-byte.run"
     ],
     "mutation_class": "read_only",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "read_only",
       "op": "compute",
-      "required_capability": "exchange.intelligence-per-byte:run"
+      "required_capability": "exchange.intelligence-per-byte.run"
     }
   ],
   "description": "Benchmark harness for Exchange jobs (intel-per-byte metric).",

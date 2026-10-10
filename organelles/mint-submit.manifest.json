@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.mint-submit:submit"
+      "exchange.mint-submit.submit"
     ],
     "mutation_class": "external_effect",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "external_effect",
       "op": "submit",
-      "required_capability": "exchange.mint-submit:submit"
+      "required_capability": "exchange.mint-submit.submit"
     }
   ],
   "description": "Batch-submit mint jobs from the mint queue to the Exchange.",

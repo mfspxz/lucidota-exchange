@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.deploy-governor:deploy"
+      "exchange.deploy-governor.deploy"
     ],
     "mutation_class": "external_effect",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "external_effect",
       "op": "govern",
-      "required_capability": "exchange.deploy-governor:deploy"
+      "required_capability": "exchange.deploy-governor.deploy"
     }
   ],
   "description": "Deploy the Exchange governor worker.js via the Cloudflare Workers API.",

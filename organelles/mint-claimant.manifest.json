@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.mint-claimant:claim"
+      "exchange.mint-claimant.claim"
     ],
     "mutation_class": "external_effect",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "external_effect",
       "op": "claim",
-      "required_capability": "exchange.mint-claimant:claim"
+      "required_capability": "exchange.mint-claimant.claim"
     }
   ],
   "description": "Worker Protocol v1 claimant for lazy artifact minting.",

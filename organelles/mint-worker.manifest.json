@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.mint-worker:execute"
+      "exchange.mint-worker.execute"
     ],
     "mutation_class": "write",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "write",
       "op": "execute",
-      "required_capability": "exchange.mint-worker:execute"
+      "required_capability": "exchange.mint-worker.execute"
     }
   ],
   "description": "Purely deterministic artifact minting (sha256-verify + report).",

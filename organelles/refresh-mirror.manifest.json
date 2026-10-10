@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.refresh-mirror:write"
+      "exchange.refresh-mirror.write"
     ],
     "mutation_class": "write",
     "required_capability": null
@@ -17,7 +17,7 @@
       },
       "mutation_class": "write",
       "op": "refresh",
-      "required_capability": "exchange.refresh-mirror:write"
+      "required_capability": "exchange.refresh-mirror.write"
     }
   ],
   "description": "Re-snapshot live D1 to d1-mirror.db (post-freeze).",

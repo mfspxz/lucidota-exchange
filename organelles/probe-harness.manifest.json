@@ -2,7 +2,7 @@
   "authority": {
     "declared_valence": "candidate",
     "granted_capabilities": [
-      "exchange.probe-harness:run"
+      "exchange.probe-harness.run"
     ],
     "mutation_class": "read_only",
     "required_capability": null
@@ -21,7 +21,7 @@
       },
       "mutation_class": "read_only",
       "op": "probe",
-      "required_capability": "exchange.probe-harness:run"
+      "required_capability": "exchange.probe-harness.run"
     }
   ],
   "description": "Trigger-equivalence campaigns against the governor gates.",
