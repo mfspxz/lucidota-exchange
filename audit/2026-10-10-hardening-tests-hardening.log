@@ -1,0 +1,20 @@
+  ok - T1a w1 -1 completes -> 200
+  ok - T1b single witness: jB stays deferred (no prune)
+  ok - T1c w1 second -1 completes -> 200
+  ok - T1d hostile: same worker twice -> jB still deferred
+  ok - T1e w2 -1 completes -> 200
+  ok - T1f two distinct workers: jB pruned (failed)
+  ok - T1g prune receipt recorded for jB
+  ok - T1h exactly one prune receipt (idempotent)
+  ok - T2a invalid worker_outcome -> 400
+  ok - T2b claim stays 'active' after 400 (not stranded in completing)
+  ok - T2c claim completes normally after the 400
+  ok - T3a simulated crash: claim stuck in 'completing'
+  ok - T3b sweep recovers stranded claim (RESET_COMPLETING_TO_ACTIVE)
+  ok - T3c claim back to 'active', worker can retry
+  ok - T4a first ingest via isoA -> 200
+  ok - T4b cross-isolate replay -> 409 (durable registry)
+  ok - T4c concurrent same-seal race: exactly one 200, one 409
+  ok - T4d distinct envelope after replays -> 200
+
+18 passed, 0 failed
