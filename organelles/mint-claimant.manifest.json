@@ -1,0 +1,42 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "exchange.mint-claimant:external"
+    ],
+    "mutation_class": "external_effect",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Claim a work unit",
+      "input_schema": {
+        "properties": {
+          "claimant": {
+            "type": "string"
+          },
+          "unit_id": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "external_effect",
+      "op": "claim",
+      "required_capability": "exchange.mint-claimant:external"
+    }
+  ],
+  "description": "Mint exchange claimant: claims work units.",
+  "name": "exchange-mint-claimant",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "exchange.evidence-graph-sync:write"
+    ],
+    "mutation_class": "write",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Sync evidence records",
+      "input_schema": {
+        "properties": {
+          "source": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "sync",
+      "required_capability": "exchange.evidence-graph-sync:write"
+    }
+  ],
+  "description": "Syncs evidence into the evidence graph DB.",
+  "name": "exchange-evidence-graph-sync",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

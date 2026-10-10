@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "exchange.mint-submit:external"
+    ],
+    "mutation_class": "external_effect",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Submit a result receipt",
+      "input_schema": {
+        "properties": {
+          "receipt": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "external_effect",
+      "op": "submit",
+      "required_capability": "exchange.mint-submit:external"
+    }
+  ],
+  "description": "Submits mint results/receipts to the exchange.",
+  "name": "exchange-mint-submit",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

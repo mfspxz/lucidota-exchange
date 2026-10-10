@@ -1,0 +1,36 @@
+{
+  "authority": {
+    "declared_valence": "proven",
+    "granted_capabilities": [],
+    "mutation_class": "read_only",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Compute ballot cost rollup",
+      "input_schema": {
+        "properties": {
+          "ballots": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "read_only",
+      "op": "rollup"
+    }
+  ],
+  "description": "Deterministic ballot/cost rollup computation.",
+  "name": "exchange-ballot-cost-rollup",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

@@ -1,0 +1,42 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "exchange.deploy-governor:write"
+    ],
+    "mutation_class": "write",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Evaluate a deploy request",
+      "input_schema": {
+        "properties": {
+          "plan": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "write",
+      "op": "govern",
+      "required_capability": "exchange.deploy-governor:write"
+    }
+  ],
+  "description": "Governs deploy actions (guardrails before deploy).",
+  "name": "exchange-deploy-governor",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

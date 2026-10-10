@@ -1,0 +1,50 @@
+{
+  "device": {
+    "policy": "none"
+  },
+  "filesystem": {
+    "allowlist": [
+      "~/workspace/exchange",
+      "/tmp"
+    ],
+    "note": "organelles/ is read by the host; the repo tree is the working set",
+    "readonly": [
+      "~/workspace/organelles"
+    ]
+  },
+  "generated": "organelle-migration wave 5",
+  "kill_semantics": {
+    "final_receipt": true,
+    "kill": "SIGTERM to child entrypoints, then exit; kill always emits a final receipt",
+    "ordering": [
+      "suspend",
+      "checkpoint",
+      "kill"
+    ],
+    "suspend": "adapter finishes in-flight op then responds; state is ephemeral unless the entrypoint checkpoints itself"
+  },
+  "network": {
+    "note": "D1 mirror refresh + worker deploys",
+    "policy": "egress-allowlist"
+  },
+  "platform": "linux-x86_64",
+  "process": {
+    "note": "adapter spawns repo entrypoints as subprocesses; no other process spawning",
+    "policy": "subprocess-only"
+  },
+  "repo": "exchange",
+  "repo_head": "1d3bcd13c5cddb581eaefb3252312eb7535e3643",
+  "resource_envelope": {
+    "cpu_cores": 2,
+    "io_mb": 512,
+    "mem_mb": 2048,
+    "note": "host enforces suspend-first on breach",
+    "wall_time_secs": 600
+  },
+  "sandbox": "none",
+  "secrets": {
+    "note": "capability names only in manifests; secret values never in env, logs, receipts, or manifests",
+    "policy": "vault-ref-only"
+  },
+  "tier": "B"
+}

@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [],
+    "mutation_class": "read_only",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Run a probe",
+      "input_schema": {
+        "properties": {
+          "probe": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "read_only",
+      "op": "probe"
+    }
+  ],
+  "description": "Runs probe harnesses against exchange surfaces.",
+  "name": "exchange-probe-harness",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

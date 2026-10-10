@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "exchange.mint-worker:external"
+    ],
+    "mutation_class": "external_effect",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Execute a claimed work unit",
+      "input_schema": {
+        "properties": {
+          "unit_id": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "external_effect",
+      "op": "execute",
+      "required_capability": "exchange.mint-worker:external"
+    }
+  ],
+  "description": "Mint exchange worker: executes claimed work units.",
+  "name": "exchange-mint-worker",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}

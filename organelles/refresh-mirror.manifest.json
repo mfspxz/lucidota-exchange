@@ -1,0 +1,39 @@
+{
+  "authority": {
+    "declared_valence": "candidate",
+    "granted_capabilities": [
+      "exchange.refresh-mirror:external"
+    ],
+    "mutation_class": "external_effect",
+    "required_capability": null
+  },
+  "codon": "ex",
+  "contracts": [
+    {
+      "description": "Refresh the D1 mirror",
+      "input_schema": {
+        "properties": {
+          "full": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "mutation_class": "external_effect",
+      "op": "refresh",
+      "required_capability": "exchange.refresh-mirror:external"
+    }
+  ],
+  "description": "Refreshes the D1 mirror database (network egress).",
+  "name": "exchange-refresh-mirror",
+  "receipt_policy": {
+    "algorithm": "sha256",
+    "chain": true,
+    "content_addressed": true
+  },
+  "schema_version": "1",
+  "transports": [
+    "unix_socket"
+  ],
+  "version": "1.0.0"
+}
