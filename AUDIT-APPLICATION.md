@@ -162,8 +162,7 @@ Status: **PROVEN**
 
 ## Commits
 
-- `TBD` — add `audit/FIX-CLAIM-POLICY.md`
-- `TBD` — add `AUDIT-APPLICATION.md`
+- `ea666e4` — adds `audit/FIX-CLAIM-POLICY.md` + `AUDIT-APPLICATION.md`
 
 ---
 
