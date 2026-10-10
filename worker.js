@@ -1121,41 +1121,74 @@ async function completeClaimed(db, b, worker) {
     // worker's -1 marks dependents as pending_disproof; prune requires
     // corroboration from a second independent worker. Prevents a compromised
     // worker from destroying legitimate work with one malicious completion.
+    // HARDENING (2026-10-10, external review P1): corroboration counts
+    // DISTINCT ELIGIBLE WORKERS, not proposals. The old code counted
+    // proposals (COUNT(*)), so one compromised worker submitting two -1s
+    // for the same input_hash pruned legitimate work by itself. Eligible =
+    // registered and not disabled in workers. The current worker's own
+    // not-yet-stamped proposal counts as one vote only if it has not
+    // already proposed for this input_hash.
     const deps = await db.prepare(
       `SELECT id FROM jobs WHERE state='deferred' AND id != ?
        AND (input_hash = ? OR json_extract(spec, '$.depends_on') = ?)`
     ).bind(job.id, ex.request_hash, job.id).all();
-    // Check for existing disproof proposal on this input_hash
-    const existing = await db.prepare(
-      `SELECT COUNT(*) as c FROM receipts WHERE ternary_verdict=-1
-       AND json_extract(decision, '$.disproof_proposal') = 1
-       AND job_id IN (SELECT id FROM jobs WHERE input_hash = ?)`
+    const witnesses = await db.prepare(
+      `SELECT COUNT(DISTINCT c.worker_id) AS w
+       FROM receipts r
+       JOIN claims c ON c.claim_id = r.claim_id
+       JOIN workers w2 ON w2.worker_id = c.worker_id AND COALESCE(w2.disabled, 0) = 0
+       WHERE r.ternary_verdict = -1
+         AND json_extract(r.decision, '$.disproof_proposal') = 1
+         AND r.job_id IN (SELECT id FROM jobs WHERE input_hash = ?)`
     ).bind(ex.request_hash).first();
-    const votes = (existing?.c || 0) + 1;
+    const alreadyProposed = await db.prepare(
+      `SELECT 1 FROM receipts r
+       JOIN claims c ON c.claim_id = r.claim_id
+       WHERE r.ternary_verdict = -1
+         AND json_extract(r.decision, '$.disproof_proposal') = 1
+         AND c.worker_id = ?
+         AND r.job_id IN (SELECT id FROM jobs WHERE input_hash = ?)
+       LIMIT 1`
+    ).bind(worker.worker_id, ex.request_hash).first();
+    const votes = (witnesses?.w || 0) + (alreadyProposed ? 0 : 1);
     if (votes >= 2) {
-    for (const dep of (deps.results || [])) {
-      await db.prepare("UPDATE jobs SET state='failed' WHERE id=?").bind(dep.id).run();
-      await db.prepare("UPDATE leases SET state='released' WHERE job_id=? AND state='active'").bind(dep.id).run();
-      await db.prepare(
-        `INSERT INTO receipts (id,job_id,result,policy_version,decision,errors,ternary_verdict)
-         VALUES (?,?,?,?,?,?,?)`
-      ).bind(uid("rcpt"), dep.id, "failed", policy_version,
-        JSON.stringify({ pruned: true, trigger: "auto-prune",
-          disproven_by: job.id, claim: claim_id,
-          reason: "dependency disproven (-1) — O(1) prune, no replan" }),
-        `pruned: dependency ${job.id} disproven`, -1).run();
-      await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
-        .bind("job:" + dep.id, "deferred", "failed", "auto-prune",
-          `disproven by ${job.id} (claim ${claim_id})`).run();
-    }
-    if ((deps.results || []).length)
-      await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
-        .bind("job:" + job.id, state, state, "auto-prune",
-          `verdict -1 pruned ${(deps.results || []).length} dependent job(s)`).run();
+      // ATOMIC PRUNE: the proposal->prune transition runs as one D1 batch
+      // (atomic on D1). Dep updates are conditional on state='deferred' and
+      // prune receipts use deterministic ids (rcpt-prune-<dep>-<job>) with
+      // INSERT..ON CONFLICT DO NOTHING, so a raced double-prune cannot
+      // double-account. Residual race: two -1 completions that both read
+      // votes<2 before either stamps both record proposals and neither
+      // prunes — fail-safe (no prune), the next -1 completes the quorum.
+      const stmts = [];
+      for (const dep of (deps.results || [])) {
+        const pruneId = `rcpt-prune-${dep.id}-${job.id}`;
+        stmts.push(db.prepare(
+          "UPDATE jobs SET state='failed' WHERE id=? AND state='deferred'").bind(dep.id));
+        stmts.push(db.prepare(
+          "UPDATE leases SET state='released' WHERE job_id=? AND state='active'").bind(dep.id));
+        stmts.push(db.prepare(
+          `INSERT INTO receipts (id,job_id,result,policy_version,decision,errors,ternary_verdict)
+           VALUES (?,?,?,?,?,?,?)
+           ON CONFLICT(id) DO NOTHING`
+        ).bind(pruneId, dep.id, "failed", policy_version,
+          JSON.stringify({ pruned: true, trigger: "auto-prune",
+            disproven_by: job.id, claim: claim_id, witnesses: votes,
+            reason: "dependency disproven (-1) — O(1) prune, no replan" }),
+          `pruned: dependency ${job.id} disproven`, -1));
+        stmts.push(db.prepare(
+          "INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
+          .bind("job:" + dep.id, "deferred", "failed", "auto-prune",
+            `disproven by ${job.id} (claim ${claim_id}) — ${votes} distinct witnesses`));
+      }
+      if (stmts.length) await db.batch(stmts);
+      if ((deps.results || []).length)
+        await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
+          .bind("job:" + job.id, state, state, "auto-prune",
+            `verdict -1 pruned ${(deps.results || []).length} dependent job(s) — ${votes} distinct witnesses`).run();
     } else {
       // Single -1: record as proposal, do NOT prune. Awaiting corroboration.
       await db.prepare("UPDATE receipts SET decision=json_patch(decision, ?) WHERE id=?")
-        .bind(JSON.stringify({ disproof_proposal: 1, votes: 1 }), receipt_id).run();
+        .bind(JSON.stringify({ disproof_proposal: 1, votes: 1, proposer: worker.worker_id }), receipt_id).run();
     }
   }
   if (ternary_verdict === 0 && !failed) {
