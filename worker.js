@@ -58,8 +58,9 @@
  *   GET  /v1/receipts?job=    → receipts
  *   GET  /v1/receipts/:id/verify → independent receipt verification
  *   POST /v1/observe          → manual health observation
- * Cron (every 30 min — */30, burn-safe since 2026-10-09; the old 5-min
- * loop blew 5.3M D1 reads/day vs the 5M free quota) → OBSERVE → CLASSIFY → UPDATE → REPLAN loop:
+ * Cron (every 30 min — cron "star-slash-30", burn-safe since 2026-10-09;
+ * the old 5-min loop blew 5.3M D1 reads/day vs the 5M free quota)
+ *   → OBSERVE → CLASSIFY → UPDATE → REPLAN loop:
  *   tier-based probing, throttle/exhaust recheck, credential-disable,
  *   provider-down detection, deferred-job replan, billing detection,
  *   discovery-source ingestion. No human prompt required.
