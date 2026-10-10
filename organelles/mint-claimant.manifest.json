@@ -7,7 +7,7 @@
     "mutation_class": "external_effect",
     "required_capability": null
   },
-  "codon": "ec",
+  "codon": "ek",
   "contracts": [
     {
       "description": "Claim a mint task (PICKUP -> POST /v1/claim)",

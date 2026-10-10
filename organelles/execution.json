@@ -70,7 +70,7 @@
       "wall_time_secs": 900
     },
     "exchange-mint-claimant": {
-      "codon": "ec",
+      "codon": "ek",
       "wall_time_secs": 300
     },
     "exchange-mint-submit": {

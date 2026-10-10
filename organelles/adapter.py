@@ -40,7 +40,7 @@ DISPATCH = {
     ('ed', 'discover'): ('py', 'discover-local.py'),
     ('eg', 'sync'): ('py', 'evidence-graph-sync.py'),
     ('ei', 'compute'): ('py', 'intelligence-per-byte.py'),
-    ('ec', 'claim'): ('py', 'mint-claimant.py'),
+    ('ek', 'claim'): ('py', 'mint-claimant.py'),
     ('em', 'submit'): ('py', 'mint-submit.py'),
     ('ew', 'execute'): ('py', 'mint-worker.py'),
     ('ep', 'probe'): ('py', 'probe-harness.py'),
