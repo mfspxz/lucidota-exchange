@@ -892,6 +892,14 @@ async function completeClaimed(db, b, worker) {
   }
   if (claim.status === "expired")
     return { error: "claim expired — completion rejected", status: 409 };
+  // HARDENING (2026-10-10, external review P1): the request is validated
+  // FULLY before the active->completing flip. The old code flipped first
+  // and 400'd on a bad worker_outcome afterwards, stranding the claim in
+  // 'completing' (invisible to the active sweep until the 15min stuck-
+  // completion recovery). No state transition precedes validation.
+  const outcome = b.worker_outcome;
+  if (!WORKER_OUTCOMES.includes(outcome))
+    return { error: `worker_outcome must be one of ${WORKER_OUTCOMES.join(" | ")}`, status: 400 };
   // ATOMIC WIN: flip active→completing in one conditional UPDATE. This is
   // the race arbiter — it precedes ALL side effects (observe, quotaConsume,
   // accounting, receipts). The loser replays the winner's result; nothing
@@ -913,9 +921,6 @@ async function completeClaimed(db, b, worker) {
     await expireClaim(db, claim, "worker completed after lease expiry");
     return { error: "LEASE_EXPIRED — completion rejected, job replanned", status: 409, worker_outcome: "EXPIRED" };
   }
-  const outcome = b.worker_outcome;
-  if (!WORKER_OUTCOMES.includes(outcome))
-    return { error: `worker_outcome must be one of ${WORKER_OUTCOMES.join(" | ")}`, status: 400 };
 
   const lease_id = claim.lease_id;
   const ex = await db.prepare("SELECT * FROM executions WHERE claim_id=?").bind(claim_id).first();
