@@ -74,7 +74,7 @@
 // NOTE for deploy: wrangler must bundle ./envelope.js with this module.
 import { verifyEnvelope as verifyReceiptEnvelope } from "./envelope.js";
 
-const VERSION = "0.6.14"; // v0.6.14: D1 read-burn code fixes (wave-29): warrantedTierInfo memoization (autoPromote+demoteCheck share one window computation per resource per cron run), health_observations retention (pruneHealthObservations, 30d, per scheduled run), health_observations CREATE TABLE version-controlled in migrate(), hot-path indexes applied at boot (0001 x2 + 0002 receipts(created_at)) // v0.6.13: migrate guard extended to scheduled() + */5 cron trigger enabled (reaction loop live) — migrate() once per isolate via __migrated guard (was every request: ~40 PRAGMAs + DDL reads/request, blew 75% of daily 5M rows_read free tier) // REDTEAM-2 tally fixes: ballot decision receipt excluded from its own tally (was phantom INVALID vote); verdict extraction takes LAST keyword in tail (was first — misread "Final verdict:" line) // REDTEAM-2 fixes: ballot_id stamped on ALL successful vote receipts (honest votes were invisible to tallies); INV7: SUCCEEDED+{} -> VERIFICATION_FAILURE for non-inference // REDTEAM-2 ballot fixes: ballot receipt job_id sentinel (was 500 on terminal transition); voter validation+slug-dedup pre-insert // 0.6.8: battery v4 R1 HIGH atomic completion idempotency (W2) // 0.6.7: deadline_s validated (400 on non-finite/non-positive, 30d cap) // voting amendments: /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1 // battery v4 R1 HIGH: atomic completion idempotency (W2) + v0.6.7 voting // voting: deadline_s validated (400 on non-finite/non-positive, 30d cap): /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 (ternary extraction, auto-prune, governor-minted needs_evidence) // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1: sovereign governor, untrusted workers — governor scalability fix (backpressure + claim expiry filter + replan receipts)
+const VERSION = "0.6.15"; // v0.6.15: D1 read-burn index bundle (read audit): idx_executions_resource, idx_receipts_resource, idx_claims_status_expiry, idx_jobs_created, idx_executions_job, idx_leases_job, idx_leases_resource, idx_resources_provider, idx_leases_state_created (all IF NOT EXISTS, boot-applied); warrantedTierInfo memoized per resource per cron run; fresh path skips window computation (cheap indexed ok24 only) // v0.6.14: D1 read-burn code fixes (wave-29): warrantedTierInfo memoization (autoPromote+demoteCheck share one window computation per resource per cron run), health_observations retention (pruneHealthObservations, 30d, per scheduled run), health_observations CREATE TABLE version-controlled in migrate(), hot-path indexes applied at boot (0001 x2 + 0002 receipts(created_at)) // v0.6.13: migrate guard extended to scheduled() + */5 cron trigger enabled (reaction loop live) — migrate() once per isolate via __migrated guard (was every request: ~40 PRAGMAs + DDL reads/request, blew 75% of daily 5M rows_read free tier) // REDTEAM-2 tally fixes: ballot decision receipt excluded from its own tally (was phantom INVALID vote); verdict extraction takes LAST keyword in tail (was first — misread "Final verdict:" line) // REDTEAM-2 fixes: ballot_id stamped on ALL successful vote receipts (honest votes were invisible to tallies); INV7: SUCCEEDED+{} -> VERIFICATION_FAILURE for non-inference // REDTEAM-2 ballot fixes: ballot receipt job_id sentinel (was 500 on terminal transition); voter validation+slug-dedup pre-insert // 0.6.8: battery v4 R1 HIGH atomic completion idempotency (W2) // 0.6.7: deadline_s validated (400 on non-finite/non-positive, 30d cap) // voting amendments: /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1 // battery v4 R1 HIGH: atomic completion idempotency (W2) + v0.6.7 voting // voting: deadline_s validated (400 on non-finite/non-positive, 30d cap): /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 (ternary extraction, auto-prune, governor-minted needs_evidence) // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1: sovereign governor, untrusted workers — governor scalability fix (backpressure + claim expiry filter + replan receipts)
 
 /* ------------------------------------------------------------------ */
 /* Seed registry — the known world. Registered idempotently via /v1/seed */
@@ -528,6 +528,26 @@ async function migrate(db) {
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_health_obs_resource_observed ON health_observations (resource_id, observed_at DESC)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_health_obs_resource_ok_observed ON health_observations (resource_id, ok, observed_at DESC)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_receipts_created_at ON receipts (created_at DESC)`).run();
+  // v0.6.15 (d1-burn-codefixes): read-audit index bundle. Verified offenders:
+  // executions(resource_id) and receipts(resource) full-scan per resource per
+  // cron in warrantedTierInfo; claims(status,lease_expiry) full-scan in
+  // sweepExpiredClaims; jobs(created_at) full-scan+sort on GET /v1/jobs;
+  // executions(job_id) full-scan on /v1/job/:id and receipt verify;
+  // leases(job_id) on job-scoped lease reads; leases(resource_id) on
+  // unclaimedQueueDepth; resources(provider_id) on providerDownCheck's
+  // triple-nested providers x resources; leases(state,created_at) on the
+  // orphan-lease sweep (claims side already has idx_claims_lease).
+  // IF NOT EXISTS: safe with the migrations/ out-of-band path. Read-only
+  // effect — no behavior change, no data touched.
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_executions_resource ON executions (resource_id)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_receipts_resource ON receipts (resource)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_claims_status_expiry ON claims (status, lease_expiry)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_jobs_created ON jobs (created_at DESC)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_executions_job ON executions (job_id)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_job ON leases (job_id)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_resource ON leases (resource_id)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_resources_provider ON resources (provider_id)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_state_created ON leases (state, created_at)`).run();
   const done = await db.prepare("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'").first();
   if (!done || done.c === 0) await backfillEvidence(db);
 }
@@ -2758,6 +2778,18 @@ export default {
     const nowIso = now();
     const rs = await db.prepare("SELECT * FROM resources").all();
     const out = [];
+    // v0.6.15 (d1-burn-codefixes): warrantedTierInfo's window computation is
+    // memoized per resource per cron run — every consumer in this pass
+    // (claimed ladder, probe path) shares one computation and it is never
+    // recomputed for the same resource. Fresh-enough resources never reach
+    // it: their staleness demotion needs only the cheap indexed ok24 COUNT
+    // inside demoteCheck, never the full window.
+    const tierInfoMemo = new Map();
+    const tierInfoFor = async (rid) => {
+      let ti = tierInfoMemo.get(rid);
+      if (!ti) { ti = await warrantedTierInfo(db, rid); tierInfoMemo.set(rid, ti); }
+      return ti;
+    };
     for (const r of (rs.results || [])) {
       const cfg = JSON.parse(r.config || "{}");
       const adapterName = cfg.adapter || r.kind;
@@ -2765,7 +2797,7 @@ export default {
       // Claimed resources are probed by their claimant's observations, never
       // by the Worker (it holds no credential). Staleness demotion still applies.
       if (adapterName === "claimed") {
-        const tierInfo = await warrantedTierInfo(db, r.id); // wave-29: one window computation shared below
+        const tierInfo = await tierInfoFor(r.id); // wave-29: one window computation shared below (v0.6.15: memoized per cron run)
         const prom = await autoPromote(db, r.id, tierInfo); // claimant observations + receipts feed the ladder
         const dev = await demoteCheck(db, r.id, tierInfo);
         out.push({ resource: r.id, skipped: "claimed — claimant observes", ev: dev || prom });
@@ -2781,7 +2813,7 @@ export default {
       const needsProbe = r.state === "UNKNOWN" || r.state === "DEGRADED" || r.state === "QUARANTINED"
         || throttleLifted || exhaustLifted || ageMin > staleAfterEv(ev);
       if (!needsProbe) {
-        const dev = await demoteCheck(db, r.id); // staleness demotion even when fresh enough to skip probing
+        const dev = await demoteCheck(db, r.id); // v0.6.15: fresh path deliberately skips warrantedTierInfo — staleness demotion needs only the cheap indexed ok24 COUNT inside demoteCheck
         out.push({ resource: r.id, skipped: "fresh", ev: dev || ev, state: r.state });
         continue;
       }
@@ -2797,7 +2829,7 @@ export default {
           const cs = (await db.prepare("SELECT credential_state FROM resources WHERE id=?").bind(r.id).first() || {}).credential_state;
           if ((ev === "DISCOVERED" || ev === "UNKNOWN" || ev === "PARKED") && cs !== "invalid")
             await setEvidence(db, r.id, "ACCESSIBLE", "cron-probe", `probe ok ${p.latency_ms}ms — auto-ingested`);
-          tierInfo = await warrantedTierInfo(db, r.id);
+          tierInfo = await tierInfoFor(r.id); // v0.6.15: memoized per cron run
           await autoPromote(db, r.id, tierInfo);
         }
         await demoteCheck(db, r.id, tierInfo);
