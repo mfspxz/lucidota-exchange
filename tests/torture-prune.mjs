@@ -212,10 +212,12 @@ const proposalCount = (db) => db.prepare(
 }
 
 // --- P7: migrate() cold-start race — concurrent first requests ----------------
-// handle(): if (!__migrated) { await migrate(db); __migrated = true; }
-// The flag flips only AFTER migrate() resolves, so N concurrent requests on
-// a fresh isolate all enter migrate(); the check-then-act ensure() ALTERs
-// collide -> "duplicate column name" -> 500 "exchange fault".
+// REGRESSION (fix 2026-10-10): ensureMigrated() assigns the migrate promise
+// synchronously before the first await, so concurrent first requests on a
+// fresh isolate share one migration. Pre-fix: the __migrated flag flipped
+// only AFTER migrate() resolved, so N concurrent requests all entered
+// migrate() and the check-then-act ensure() ALTERs collided
+// ("duplicate column name" -> 500 "exchange fault").
 {
   let dup500 = 0, rounds = 0;
   for (let round = 0; round < 5; round++) {

@@ -2245,12 +2245,29 @@ async function runJob(db, job_id, spec, env, opts) {
 // Isolate-level migrate guard: schema migration runs once per isolate
 // lifetime, not per request (D1 read-budget defense; deploys get fresh
 // isolates so schema changes still apply).
-let __migrated = false;
+// FIX P7 (2026-10-10, torture campaign): migrate() cold-start race. The old
+// `if (!__migrated) { await migrate(db); __migrated = true; }` flipped the
+// flag only AFTER migrate() resolved, so N concurrent requests on a fresh
+// isolate all entered migrate() and the check-then-act ensure() ALTERs
+// collided ("duplicate column name" -> 500 "exchange fault"). The guard
+// assigns the migrate promise SYNCHRONOUSLY before the first await, so all
+// concurrent requests share one migration. On failure the guard resets so
+// the next request retries instead of sticking on a rejected promise.
+let __migrating = null;
+async function ensureMigrated(db) {
+  if (!__migrating) {
+    __migrating = migrate(db).then(
+      () => true,
+      (e) => { __migrating = null; throw e; }
+    );
+  }
+  return __migrating;
+}
 async function handle(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const db = env.EXCHANGE_DB;
-  if (!__migrated) { await migrate(db); __migrated = true; }
+  await ensureMigrated(db);
 
   if (path === "/" && request.method === "GET")
     return json({ name: "lucidota-exchange", version: VERSION, truth: "no evidence = UNKNOWN" });
@@ -2877,7 +2894,7 @@ export default {
     // - deferred jobs replan against current reality (bounded)
     // - stale demotion, billing detection, discovery ingestion
     const db = env.EXCHANGE_DB;
-    if (!__migrated) { await migrate(db); __migrated = true; } // D1 read-budget defense
+    await ensureMigrated(db); // D1 read-budget defense
     const nowIso = now();
     const rs = await db.prepare("SELECT * FROM resources").all();
     const out = [];
