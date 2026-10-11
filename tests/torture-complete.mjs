@@ -133,11 +133,12 @@ const completeAs = (worker, claimId, outcome, extra = {}) =>
 }
 
 // --- C3: sweep interleaved with an in-flight completion -----------------------
-// Claim aged past the 15min stuck threshold with a still-valid lease.
-// The sweep resets 'completing'->'active' MID-COMPLETION; the in-flight
-// completion keeps writing (receipt/accounting/quota are unconditional
-// post-flip) and its final conditional UPDATE no-ops. A retry then
-// executes a SECOND time: the idempotency guard never fires.
+// REGRESSION (fix 2026-10-10): the stuck sweep keys on the completing-flip
+// time (completing_at), not claim age. Claim aged past the 15min threshold
+// with a still-valid lease; the sweep fires MID-COMPLETION but must NOT
+// reset the in-flight claim. Attempt #1 completes normally (200), the retry
+// idempotent-replays (200), exactly 1 receipt + 1 accounting row.
+// Pre-fix this produced 2 receipts + 2 accounting rows (double-execution).
 {
   const db = await freshDb();
   await db.prepare("UPDATE claims SET claimed_at=datetime('now','-20 minutes') WHERE claim_id='cX'").run();
@@ -163,12 +164,15 @@ const completeAs = (worker, claimId, outcome, extra = {}) =>
   // Worker retry after the (apparent) timeout: fresh envelope.
   const r2 = await completeAs(worker, "cX", "SUCCEEDED");
   const rc = await receiptsFor(db, "cX"), ac = await acctsFor(db, "cX");
-  if (sweepHit && rc === 2 && ac === 2)
+  const fixed = !sweepHit && r1.status === 200 && midStatus === "completed"
+    && r2.status === 200 && r2.body && r2.body.idempotent === true && rc === 1 && ac === 1;
+  if (fixed)
+    ok("C3 sweep cannot reset in-flight completion (flip-time keyed): attempt#1 -> 200 completed, retry idempotent-replays, exactly 1 receipt + 1 accounting row");
+  else if (sweepHit && rc === 2 && ac === 2)
     bad("C3 sweep-interleaved double-execution",
       `BROKEN: sweep reset mid-completion; attempt#1 -> ${r1.status} (final write no-op, status was '${midStatus}'); retry -> ${r2.status}; receipts=${rc} accounting=${ac} for ONE claim`);
-  else if (sweepHit)
-    ok(`C3 sweep fired mid-completion but no double-execution (receipts=${rc} accounting=${ac}) — unexpected, investigate`);
-  else bad("C3 setup", `sweep did not catch the in-flight completion (sawCompleting=${sawCompleting})`);
+  else bad("C3 post-fix regression",
+    `sweepHit=${sweepHit} sawCompleting=${sawCompleting} r1=${r1.status} mid=${midStatus} r2=${r2.status} idem=${r2.body && r2.body.idempotent} receipts=${rc} accounting=${ac}`);
 }
 
 // --- C4: sweep must NOT touch a fresh in-flight completion --------------------

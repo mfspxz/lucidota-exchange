@@ -514,6 +514,11 @@ async function migrate(db) {
   await ensure("executions", "model_match", "model_match INTEGER");
   await ensure("executions", "usage_json", "usage_json TEXT");
   await ensure("resources", "claimant_trust_required", "claimant_trust_required TEXT DEFAULT 'any'");
+  // FIX C3 (2026-10-10, torture campaign): the stuck-completion sweep keys on
+  // the completing-flip time, not claim age. completing_at is stamped (SQLite
+  // datetime format, via minutesAgo) atomically with the active->completing
+  // flip; the sweep can never reset an in-flight completion mid-flight.
+  await ensure("claims", "completing_at", "completing_at TEXT");
   await ensure("receipts", "claim_id", "claim_id TEXT");
   await ensure("receipts", "worker_outcome", "worker_outcome TEXT");
   await ensure("receipts", "ternary_verdict", "ternary_verdict INTEGER"); // +1 | 0 | -1 | NULL (amendment A1, v0.6.3)
@@ -949,9 +954,14 @@ async function completeClaimed(db, b, worker) {
   // the race arbiter — it precedes ALL side effects (observe, quotaConsume,
   // accounting, receipts). The loser replays the winner's result; nothing
   // double-executes. Mirrors the claim path's atomic lease win.
+  // FIX C3 (2026-10-10): stamp completing_at atomically with the flip, in
+  // SQLite datetime('now') format (NOT ISO — the stuck sweep compares against
+  // datetime('now','-15 minutes'); ISO's 'T' > ' ' breaks the comparison).
+  // The stuck-completion sweep keys on this flip time, so it can never reset
+  // an in-flight completion back to 'active' mid-flight.
   const flip = await db.prepare(
-    "UPDATE claims SET status='completing' WHERE claim_id=? AND status='active'"
-  ).bind(claim_id).run();
+    "UPDATE claims SET status='completing', completing_at=? WHERE claim_id=? AND status='active'"
+  ).bind(minutesAgo(0), claim_id).run();
   if ((((flip.meta) || {}).changes || 0) === 0) {
     const done = await db.prepare("SELECT status, completion_summary FROM claims WHERE claim_id=?").bind(claim_id).first();
     if (done && done.status === "completed") {
@@ -1323,8 +1333,16 @@ async function sweepExpiredClaims(db) {
   // (flip requires status='active'), invisible to the active sweep.
   // Reset to 'active' after 15min so the worker can retry; the flip
   // re-arbitrates. 15min >> any legitimate completion (lease max 10min).
+  // FIX C3 (2026-10-10): key on the completing-flip time (completing_at),
+  // NOT claim age. Keying on claimed_at let the sweep reset an IN-FLIGHT
+  // completion (old claim, fresh flip), whose final conditional UPDATE then
+  // no-op'd — the retry double-executed (2 receipts + 2 accounting rows).
+  // Rows predating the completing_at column (NULL) fall back to claimed_at.
   const stuck = await db.prepare(
-    "SELECT claim_id, job_id FROM claims WHERE status='completing' AND claimed_at < datetime('now','-15 minutes') LIMIT 10"
+    `SELECT claim_id, job_id FROM claims WHERE status='completing' AND (
+       completing_at < datetime('now','-15 minutes')
+       OR (completing_at IS NULL AND claimed_at < datetime('now','-15 minutes'))
+     ) LIMIT 10`
   ).all();
   for (const claim of ((stuck.results) || [])) {
     await db.prepare("UPDATE claims SET status='active' WHERE claim_id=? AND status='completing'").bind(claim.claim_id).run();
