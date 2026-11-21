@@ -1,0 +1,3514 @@
+{
+ "probed_at": "2026-11-21T00:22:30Z",
+ "probe": "live /models per key, estate surrogates",
+ "results": [
+  {
+   "key": "nim",
+   "status": "ok",
+   "models": [
+    {
+     "model": "bigcode/starcoder2-15b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "fastino/gliner2-pii",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "google/gemma-3-12b-it",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "google/gemma-3-4b-it",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "google/gemma-4-31b-it",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "meta/muse-glimmer-30b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "minimaxai/minimax-m3.1-flash",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "mistralai/mistral-large-4-1t-a52b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "moonshotai/kimi-k3.1-pro",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/ai-synthetic-video-detector",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/cosmos-reason2-8b",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/embed-qa-4",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/ising-calibration-1.5-31b",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/llama-3.1-nemoguard-8b-topic-control",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/llama-3.1-nemotron-safety-guard-8b-v3",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/llama-3.2-nv-embedqa-1b-v1",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3-embed-1b",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3-ultra-550b-a55b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-bolt-e4b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-content-safety",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-embed-1b",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-embed-8b",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nv-embedqa-mistral-7b-v2",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nvclip",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/riva-translate-4b-instruct-v2",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "poolside/laguna-xs-2.1",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "snowflake/arctic-embed-l",
+     "capability": "embedding",
+     "cost": "free"
+    },
+    {
+     "model": "stepfun-ai/step-5-preview",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "z-ai/glm-5.3-flash",
+     "capability": "inference",
+     "cost": "free"
+    }
+   ],
+   "count": 33,
+   "ms": 1176,
+   "inference_count": 16,
+   "embedding_count": 8,
+   "other_count": 9,
+   "free_count": 33
+  },
+  {
+   "key": "deepseek",
+   "status": "ok",
+   "models": [
+    {
+     "model": "deepseek-flash",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "paid account (his paid/priority resource); no free tier. $0 proof = COST-gate refusal; execution needs his spend say-so"
+    },
+    {
+     "model": "deepseek-v4-pro",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "paid account (his paid/priority resource); no free tier. $0 proof = COST-gate refusal; execution needs his spend say-so"
+    }
+   ],
+   "count": 2,
+   "ms": 1452,
+   "inference_count": 2,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 0
+  },
+  {
+   "key": "groq",
+   "status": "ok",
+   "models": [
+    {
+     "model": "allam-2-7b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "canopylabs/orpheus-arabic-saudi",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "canopylabs/orpheus-v1-english",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "meta-llama/llama-prompt-guard-2-22m",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "meta-llama/llama-prompt-guard-2-86m",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "openai/gpt-oss-120b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "openai/gpt-oss-20b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "openai/gpt-oss-safeguard-20b",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "qwen/qwen3.6-27b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "qwen/qwen3.8-27b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "whisper-large-v3",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "whisper-large-v3-turbo",
+     "capability": "other",
+     "cost": "free"
+    }
+   ],
+   "count": 12,
+   "ms": 908,
+   "inference_count": 5,
+   "embedding_count": 0,
+   "other_count": 7,
+   "free_count": 12
+  },
+  {
+   "key": "cerebras",
+   "status": "ok",
+   "models": [
+    {
+     "model": "gpt-oss-120b",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "qwen-3.8-27b",
+     "capability": "inference",
+     "cost": "free"
+    }
+   ],
+   "count": 2,
+   "ms": 800,
+   "inference_count": 2,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 2
+  },
+  {
+   "key": "mistral",
+   "status": "ok",
+   "models": [
+    {
+     "model": "codestral-2508",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "codestral-embed",
+     "capability": "embedding",
+     "cost": "paid"
+    },
+    {
+     "model": "codestral-embed-2505",
+     "capability": "embedding",
+     "cost": "paid"
+    },
+    {
+     "model": "codestral-latest",
+     "capability": "inference",
+     "cost": "free",
+     "note": "free-tier matrix, probed 2026-10-10 (local-mistral SKILL.md)"
+    },
+    {
+     "model": "magistral-medium-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "magistral-small-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "ministral-14b-2512",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "ministral-14b-latest",
+     "capability": "inference",
+     "cost": "free",
+     "note": "free-tier matrix, probed 2026-10-10 (local-mistral SKILL.md)"
+    },
+    {
+     "model": "ministral-3b-2512",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "ministral-3b-latest",
+     "capability": "inference",
+     "cost": "free",
+     "note": "free-tier matrix, probed 2026-10-10 (local-mistral SKILL.md)"
+    },
+    {
+     "model": "ministral-8b-2512",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "ministral-8b-latest",
+     "capability": "inference",
+     "cost": "free",
+     "note": "free-tier matrix, probed 2026-10-10 (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-code-fim-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-code-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-embed",
+     "capability": "embedding",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-embed-2312",
+     "capability": "embedding",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-medium",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-medium-2604",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-medium-3",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-medium-3-5",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-medium-3.5",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-medium-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-moderation-2603",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-ocr-2512",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-ocr-3",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-ocr-3-0",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-ocr-4",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-ocr-4-1",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-ocr-latest",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "mistral-small-2603",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-small-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-vibe-cli-fast",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-vibe-cli-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "mistral-vibe-cli-with-tools",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "voxtral-mini-2602",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "voxtral-mini-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "voxtral-mini-realtime-2602",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "voxtral-mini-realtime-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "voxtral-mini-transcribe-3",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-transcribe-3-0",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-transcribe-realtime-2602",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-transcribe-realtime-3",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-transcribe-realtime-3-0",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-tts-2603",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-tts-3",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-tts-3-0",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-mini-tts-latest",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-small-2507",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "voxtral-small-latest",
+     "capability": "inference",
+     "cost": "paid",
+     "note": "429-gated on free tier (local-mistral SKILL.md)"
+    },
+    {
+     "model": "voxtral-small-transcribe-3",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "voxtral-small-transcribe-3-0",
+     "capability": "other",
+     "cost": "paid"
+    }
+   ],
+   "count": 51,
+   "ms": 2201,
+   "inference_count": 29,
+   "embedding_count": 4,
+   "other_count": 18,
+   "free_count": 4
+  },
+  {
+   "key": "cohere",
+   "status": "ok",
+   "models": [
+    {
+     "model": "c4ai-aya-expanse-32b",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "c4ai-aya-vision-32b",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "cohere-transcribe-03-2026",
+     "capability": "other",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-a-03-2025",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-a-plus-05-2026",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-a-reasoning-08-2025",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-a-translate-08-2025",
+     "capability": "other",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-a-vision-07-2025",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-r-08-2024",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-r-plus-08-2024",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-r7b-12-2024",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "command-r7b-arabic-02-2025",
+     "capability": "inference",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-english-light-v3.0",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-english-light-v3.0-image",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-english-v3.0",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-english-v3.0-image",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-multilingual-light-v3.0",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-multilingual-light-v3.0-image",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-multilingual-v3.0",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    },
+    {
+     "model": "embed-multilingual-v3.0-image",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "trial key, 1000 calls/mo cap (local-cohere SKILL.md); cap was exhausted Oct, resets monthly"
+    }
+   ],
+   "count": 20,
+   "ms": 1026,
+   "inference_count": 10,
+   "embedding_count": 8,
+   "other_count": 2,
+   "free_count": 20
+  },
+  {
+   "key": "openrouter",
+   "status": "ok",
+   "models": [
+    {
+     "model": "aion-labs/aion-2.0",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "aion-labs/aion-3.0",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "aion-labs/aion-3.0-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "aion-labs/aion-3.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "aion-labs/aion-3.5-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "aion-labs/aion-rp-llama-3.1-8b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "amazon/nova-2-lite-v1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "amazon/nova-lite-v1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "amazon/nova-micro-v1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "amazon/nova-premier-v1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "amazon/nova-pro-v1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthracite-org/magnum-v4-72b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-fable-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-fable-5.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-fable-5.1:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-fable-5.2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-fable-5.2:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-haiku-4.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-haiku-5.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-haiku-5.5:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-4.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-4.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-4.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-4.7",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-4.8",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-5.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-5.5:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-opus-5:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-sonnet-4.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-sonnet-4.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-sonnet-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-sonnet-5.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "anthropic/claude-sonnet-5.5:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "baidu/ernie-5.5-flash-preview:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "baidu/ernie-light-dt-1.0-intl",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "bytedance-seed/seed-2-1-turbo",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "bytedance-seed/seed-2.0-lite",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "bytedance-seed/seed-2.0-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "bytedance/ui-tars-1.5-7b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "cohere/command-a",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "cohere/command-a-plus",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "cohere/command-r-08-2024",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "cohere/command-r-plus-08-2024",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "cohere/command-r7b-12-2024",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-chat",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-chat-v3-0324",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-chat-v3.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-r1-0528",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v3.1-terminus",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v3.2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v3.2-exp",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4-flash-0731",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4-flash-0731:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4-flash-vision-exp",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4-pro-0813",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4.1-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4.1-flash-1017",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4.1-flash-1017:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "deepseek/deepseek-v4.1-flash:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "dots-studio/dots-3-note-preview:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "elorian/glimpse",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "fireworks/ember-1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-2.5-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-2.5-flash-image",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-2.5-flash-lite",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-2.5-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-2.5-pro-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3-flash-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3-flash-preview:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3-pro-image",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3-pro-image-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-flash-image",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-flash-image-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-flash-lite",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-flash-lite-image",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-flash-lite-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-flash-lite:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-pro-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-pro-preview-customtools",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.1-pro-preview:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.5-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.5-flash-lite",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.5-flash-lite:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.5-flash:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.6-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.6-flash:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.7-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.7-flash:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.8-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-3.8-flash:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-argon",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-argon:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-carbon",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-carbon:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-hydrogen",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-hydrogen:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-neon",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-4-neon:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-nano-banana-2.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-omni-1.1-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemini-omni-1.2-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemma-2-27b-it",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemma-3-12b-it",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemma-3-27b-it",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemma-3-4b-it",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemma-4-26b-a4b-it",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemma-4-26b-a4b-it:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "google/gemma-4-31b-it",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "google/gemma-4-31b-it:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "google/lyria-3-clip-preview",
+     "capability": "other",
+     "cost": "free"
+    },
+    {
+     "model": "google/lyria-3-pro-preview",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "gryphe/mythomax-l2-13b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "ibm-granite/granite-4.2-8b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "inclusionai/ling-3.0-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "inclusionai/ling-3.0-flash-vl",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "inclusionai/ling-3.0-tiny",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "inclusionai/ling-3.1-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "inclusionai/ling-3.2-flash:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "inference-net/schematron-v2-small",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "inference-net/schematron-v2-turbo",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "kt/midm-k-3.0-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "liquid/lfm-2.5-24b-a2b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "liquid/lfm-3-1.7b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "liquid/lfm-3-1.7b:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "mancer/weaver",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meituan/longcat-2.0",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta-llama/llama-3.1-70b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta-llama/llama-3.1-8b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta-llama/llama-3.2-3b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta-llama/llama-3.3-70b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta-llama/llama-4-maverick",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta-llama/llama-4-scout",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta-llama/llama-guard-4-12b",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-ember",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-glimmer-30b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-glimmer-30b:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-spark-1.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-spark-1.2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-spark-1.3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-spark-open",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "meta/muse-wonder",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "microsoft/phi-4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "minimax/minimax-m2.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "minimax/minimax-m2.7",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "minimax/minimax-m3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "minimax/minimax-m3.1-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "minimax/minimax-m3:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/codestral-2508",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/devstral-2512",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/ministral-14b-2512",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/ministral-3b-2512",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/ministral-8b-2512",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-large",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-large-2407",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-large-2512",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-large-4-0",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-medium-3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-medium-3-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-medium-3-5:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-medium-3.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-nemo",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-saba",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-small-24b-instruct-2501",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-small-2603",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-small-3.1-24b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mistral-small-3.2-24b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/mixtral-8x22b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/pixtral-large-2502",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "mistralai/voxtral-small-24b-2507",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moondream/moondream3-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moondream/moondream3.1-9b-a2b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k2-0905",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k2-thinking",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k2.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k2.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k2.7-code",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k3.1-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k3.1-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "moonshotai/kimi-k3:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "morph/morph-v3-fast",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "morph/morph-v3-fast:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "morph/morph-v3-large",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "morph/morph-v3-large:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "motif-technologies/motif-3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nex-agi/nex-n2.5-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nex-agi/nex-n2.5-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nex-agi/nex-n2.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nousresearch/hermes-4-405b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nvidia/nemotron-3-nano-30b-a3b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3-super-120b-a12b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nvidia/nemotron-3-ultra-550b-a55b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-content-safety",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-lightning",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-lightning:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-super-vl",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "nvidia/nemotron-3.5-super-vl:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "nvidia/switchyard",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-3.5-turbo-0613",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-3.5-turbo-16k",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4.1-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4.1-nano",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4o",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4o-2024-05-13",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4o-2024-08-06",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4o-2024-11-20",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4o-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-4o-mini-2024-07-18",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5-image",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5-image-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5-nano",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5-nano:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.1-codex",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.1-codex-max",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.1-codex-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.2-codex",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.2-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.3-codex",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.4-image-2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.4-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.4-nano",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.4-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.5-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-luna",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-luna-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-luna-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-luna:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-sol-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-sol-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-sol:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-terra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-terra-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-terra-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-5.6-terra:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-astra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-astra-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-astra-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-astra:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-luna",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-luna-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-luna-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-luna:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-sol-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-sol-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6-sol:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-sol-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-sol-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-sol:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-terra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-terra-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-terra-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.1-terra:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-astra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-astra-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-astra-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-astra:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-sol-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-sol-pro:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-6.2-sol:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-audio",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-audio-mini",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-chat-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-oss-120b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-oss-120b:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-oss-20b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-oss-20b:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/gpt-oss-safeguard-20b",
+     "capability": "other",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/o3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openai/o3-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openrouter/auto",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openrouter/auto-beta",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openrouter/auto-code",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openrouter/bodybuilder",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openrouter/free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "openrouter/fusion",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "openrouter/pareto-code",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "particle-ai/particle-1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "particle-ai/particle-1:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "perceptron/perceptron-mk1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "perceptron/perceptron-mk1.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "perplexity/sonar",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "perplexity/sonar-deep-research",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "perplexity/sonar-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "perplexity/sonar-pro-search",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "perplexity/sonar-reasoning-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "prism-ml/ternary-bonsai-2-27b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "prism-ml/ternary-bonsai-2-9b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen-2.5-72b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen-2.5-coder-32b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen-plus",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen2.5-vl-72b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-14b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-235b-a22b-2507",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-235b-a22b-thinking-2507",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-30b-a3b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-30b-a3b-instruct-2507",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-32b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-coder",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-coder-30b-a3b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-coder-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-coder-next",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-next-80b-a3b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-vl-235b-a22b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-vl-30b-a3b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3-vl-8b-instruct",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-122b-a10b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-27b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-35b-a3b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-397b-a17b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-9b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-flash-02-23",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-plus-02-15",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.5-plus-20260420",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.6-27b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.6-35b-a3b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.6-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.6-plus",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.7-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.7-max",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.7-plus",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.7-plus:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-2.4t-a95b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-27b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-27b:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-max-0902",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-max-0902:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-max-prime",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen3.8-omni-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "qwen/qwen4-max",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "recursive/flint-v1.0:free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "reflection/beam-1.0-501b-a23b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "rekaai/reka-edge",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "rekaai/reka-flash-3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "relace/relace-apply-3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "relace/relace-search",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "ricursiveai/ripple-65b-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "sakana/fugu-max",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "sakana/fugu-ultra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "sakana/fugu-ultra-v2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "sao10k/l3-lunaris-8b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "sao10k/l3.1-euryale-70b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "scaledown/extract",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "scaledown/summarize",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "stepfun/step-3.7-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "stepfun/step-5-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "tencent/hy-mt2-1.8b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "tencent/hy-mt2-30b-a3b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "tencent/hy-mt2-7b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "tencent/hy3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "tencent/hy4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "tencent/hy4-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "tencent/hy4-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "thedrummer/cydonia-24b-v4.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "thedrummer/skyfall-36b-v2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "thedrummer/unslopnemo-12b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "thinkingmachines/inkling",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "thinkingmachines/inkling-2-small",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "thinkingmachines/inkling-small",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "thinkingmachines/inkling-small:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "typesafe/jev-router",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "unbiased/pareto-26.10",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "unbiased/pareto-26.10-preview",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "unbiased/pareto-26.9",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "undi95/remm-slerp-l2-13b",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "upstage/solar-mini4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "upstage/solar-pro4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "writer/palmyra-x5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.20",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.20-multi-agent",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.3:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.6:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.7",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "x-ai/grok-4.7:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "xiaomi/mimo-v2.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "xiaomi/mimo-v2.5-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "xiaomi/mimo-v2.6-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "xiaomi/mimo-v2.6-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "xiaomi/mimo-v2.6-pro-ultraspeed",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-4.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-4.5-air",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-4.5v",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-4.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-4.6v",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-4.7",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-4.7-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5-turbo",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.2:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.3-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.3-flash:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.3-flashx",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.3-flashx-legal",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.3-prime",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5.3:batch",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "z-ai/glm-5v-turbo",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~anthropic/claude-fable-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~anthropic/claude-haiku-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~anthropic/claude-opus-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~anthropic/claude-sonnet-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~deepseek/deepseek-flash-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~deepseek/deepseek-pro-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~deepseek/deepseek-v4-flash-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~google/gemini-flash-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~google/gemini-pro-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~moonshotai/kimi-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~openai/gpt-astra-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~openai/gpt-luna-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~openai/gpt-mini-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~openai/gpt-sol-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~openai/gpt-terra-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~unbiased/pareto-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~x-ai/grok-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~z-ai/glm-flash-latest",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "~z-ai/glm-latest",
+     "capability": "inference",
+     "cost": "paid"
+    }
+   ],
+   "count": 441,
+   "ms": 2800,
+   "inference_count": 435,
+   "embedding_count": 0,
+   "other_count": 6,
+   "free_count": 15
+  },
+  {
+   "key": "ai-router",
+   "status": "failover-pool",
+   "models": [],
+   "count": 0,
+   "inference_count": 0,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 0,
+   "error": "/v1/models 404 (router_error); chat probes 2026-11-21 00:4xZ: gemini-2.0-flash, gemini-2.5-flash, gemini-3.8-flash, gemini-3.5-flash-lite ALL served by nvidia/nemotron-3.5-bolt-e4b (200, content ok). The router IGNORES the requested model and fails over silently (Gemini backend dead: GEMINI_KEY service account deleted/disabled). Capability: inference-failover, model_exact=false \u2014 jobs WITHOUT a pinned model only.",
+   "capability_offered": "inference-failover",
+   "model_exact": false,
+   "served_by_now": "nvidia/nemotron-3.5-bolt-e4b"
+  },
+  {
+   "key": "gemini",
+   "status": "dead-key",
+   "models": [],
+   "count": 0,
+   "inference_count": 0,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 0,
+   "error": "GET /v1beta/models -> 401: 'The bound service account is deleted or disabled.' GEMINI_KEY is dead for direct Gemini API. Gemini reachability is via ai-router only, and the router's Gemini backend is the same dead key (it fails over to NIM)."
+  },
+  {
+   "key": "cloudflare-ai",
+   "status": "ok-partial",
+   "count": 6,
+   "inference_count": 1,
+   "embedding_count": 5,
+   "other_count": 0,
+   "free_count": 6,
+   "models": [
+    {
+     "model": "@cf/google/gemma-4-26b-a4b-it",
+     "capability": "inference",
+     "cost": "free",
+     "note": "chat probe 200, 2026-11-21 00:4xZ"
+    },
+    {
+     "model": "@cf/baai/bge-small-en-v1.5",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "partial-body (bytes flowed, transport truncated)"
+    },
+    {
+     "model": "@cf/baai/bge-base-en-v1.5",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "clean 200, dims=768"
+    },
+    {
+     "model": "@cf/baai/bge-large-en-v1.5",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "partial-body (bytes flowed, transport truncated)"
+    },
+    {
+     "model": "@cf/baai/bge-m3",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "partial-body (bytes flowed, transport truncated)"
+    },
+    {
+     "model": "@cf/qwen/qwen3-embedding-0.6b",
+     "capability": "embedding",
+     "cost": "free",
+     "note": "partial-body (bytes flowed, transport truncated)"
+    }
+   ],
+   "error": "Full Workers AI chat catalog UNLISTABLE with available credentials: CF API GET /ai/models/search -> 403 (token lacks AI scope; broadening scopes needs Zack). The lucidota-ai proxy passes any model id through to env.AI.run, so catalog models can be added by name later. Embedding allowlist is explicit in the proxy source (5 models, all probed)."
+  },
+  {
+   "key": "friendli",
+   "status": "ok",
+   "models": [
+    {
+     "model": "google/gemma-4-31B-it",
+     "capability": "inference",
+     "cost": "unfunded"
+    },
+    {
+     "model": "zai-org/GLM-5.2",
+     "capability": "inference",
+     "cost": "unfunded"
+    },
+    {
+     "model": "zai-org/GLM-5.3",
+     "capability": "inference",
+     "cost": "unfunded"
+    },
+    {
+     "model": "zai-org/GLM-5.3-Flash",
+     "capability": "inference",
+     "cost": "unfunded"
+    }
+   ],
+   "count": 4,
+   "ms": 1096,
+   "inference_count": 4,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 0
+  },
+  {
+   "key": "zen",
+   "status": "ok",
+   "models": [
+    {
+     "model": "opencode/beam-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/big-pickle",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-fable-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-fable-5-1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-fable-5-2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-haiku-4-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-haiku-5-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-opus-4-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-opus-4-6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-opus-4-7",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-opus-4-8",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-opus-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-opus-5-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-sonnet-4-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-sonnet-4-6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-sonnet-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/claude-sonnet-5-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/deepseek-v4-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/deepseek-v4.1-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/deepseek-v4.1-flash-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/flint-40b-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/gemini-3.5-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-3.5-flash-lite",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-3.6-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-3.7-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-3.8-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-4-argon",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-4-carbon",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-4-hydrogen",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gemini-4-neon",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/glm-5.3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/glm-5.3-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5-codex",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5-nano",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.1-codex",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.1-codex-max",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.1-codex-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.2-codex",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.3-codex",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.3-codex-spark",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.4-mini",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.4-nano",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.4-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.5-pro",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.6-luna",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.6-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-5.6-terra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-6-astra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-6-luna",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-6-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-6.1-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-6.2-astra",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/gpt-6.2-sol",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/grok-4.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/grok-4.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/grok-4.7",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/grok-build-0.1",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/hy4-flash-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/iceman-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/kimi-k2.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/kimi-k2.6",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/kimi-k2.7-code",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/kimi-k3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/longcat-2.5-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/mimo-v2.6-flash-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/minimax-m2.5",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/minimax-m2.7",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/minimax-m3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/mistral-large-4",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/muse-ember-1.0",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/muse-spark-1.2",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/muse-spark-1.3",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/muse-wonder-1.0",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/nemotron-3.5-lightning-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/nemotron-3.5-super-vl-free",
+     "capability": "inference",
+     "cost": "free"
+    },
+    {
+     "model": "opencode/qwen3.5-plus",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/qwen3.6-plus",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/qwen3.8-flash",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/qwen3.8-max",
+     "capability": "inference",
+     "cost": "paid"
+    },
+    {
+     "model": "opencode/tidepool-alpha-free",
+     "capability": "inference",
+     "cost": "free"
+    }
+   ],
+   "count": 85,
+   "ms": 23733,
+   "inference_count": 85,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 10
+  },
+  {
+   "key": "exaone",
+   "status": "no-key",
+   "models": [],
+   "count": 0,
+   "error": "EXAONE_API_KEY never received; no account to be created",
+   "inference_count": 0,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 0
+  },
+  {
+   "key": "inception",
+   "status": "no-key",
+   "models": [],
+   "count": 0,
+   "error": "Mercury sign-ups blocked; no key in estate",
+   "inference_count": 0,
+   "embedding_count": 0,
+   "other_count": 0,
+   "free_count": 0
+  }
+ ],
+ "total_models": 656,
+ "keys_ok": 11,
+ "total_inference": 589,
+ "total_free_inference": 62
+}

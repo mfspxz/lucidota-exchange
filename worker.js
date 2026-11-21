@@ -50,6 +50,10 @@
  *   POST /v1/resources/:id/verify → run the evidence gauntlet now
  *   GET  /v1/resources/:id/evidence → evidence state + promotion/demotion log
  *   GET  /v1/capacity          → honest $0 commandable compute (usable resources only)
+ *   GET  /v1/capabilities      → every listed model capability (per key, per model)
+ *   GET  /v1/config            → knobs and dials: per-key config + global config + change log
+ *   POST /v1/config            → set a knob (per-key enable/allowlist/cost_cap/failover_order, global allow_paid); every change receipted in config_log
+ *   GET  /v1/config/log        → append-only config change receipts
  *   POST /v1/job              → submit job contract → governor → lease → execute → receipt
  *   POST /v1/claim            → trusted claimant picks up delegated work (atomic lease claim)
  *   POST /v1/complete         → claimant reports a delegated execution (full accounting)
@@ -76,7 +80,7 @@
 // NOTE for deploy: wrangler must bundle ./envelope.js with this module.
 import { verifyEnvelope as verifyReceiptEnvelope } from "./envelope.js";
 
-const VERSION = "0.6.16"; // v0.6.16: security hardening bundle (external review 2026-10-10): P1 distinct-eligible-worker disproof corroboration + atomic prune batch, P1 worker_outcome validated BEFORE the active->completing flip, P1/P2 D1 seal_registry durable replay arbiter (cross-isolate), VERIFY cron drift resolved (deployed==wrangler.toml==*/30 via read-only API; stale 5-min comments fixed) // v0.6.15: D1 read-burn index bundle (read audit): idx_executions_resource, idx_receipts_resource, idx_claims_status_expiry, idx_jobs_created, idx_executions_job, idx_leases_job, idx_leases_resource, idx_resources_provider, idx_leases_state_created (all IF NOT EXISTS, boot-applied); warrantedTierInfo memoized per resource per cron run; fresh path skips window computation (cheap indexed ok24 only) // v0.6.14: D1 read-burn code fixes (wave-29): warrantedTierInfo memoization (autoPromote+demoteCheck share one window computation per resource per cron run), health_observations retention (pruneHealthObservations, 30d, per scheduled run), health_observations CREATE TABLE version-controlled in migrate(), hot-path indexes applied at boot (0001 x2 + 0002 receipts(created_at)) // v0.6.13: migrate guard extended to scheduled() + */5 cron trigger enabled (reaction loop live) — migrate() once per isolate via __migrated guard (was every request: ~40 PRAGMAs + DDL reads/request, blew 75% of daily 5M rows_read free tier) // REDTEAM-2 tally fixes: ballot decision receipt excluded from its own tally (was phantom INVALID vote); verdict extraction takes LAST keyword in tail (was first — misread "Final verdict:" line) // REDTEAM-2 fixes: ballot_id stamped on ALL successful vote receipts (honest votes were invisible to tallies); INV7: SUCCEEDED+{} -> VERIFICATION_FAILURE for non-inference // REDTEAM-2 ballot fixes: ballot receipt job_id sentinel (was 500 on terminal transition); voter validation+slug-dedup pre-insert // 0.6.8: battery v4 R1 HIGH atomic completion idempotency (W2) // 0.6.7: deadline_s validated (400 on non-finite/non-positive, 30d cap) // voting amendments: /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1 // battery v4 R1 HIGH: atomic completion idempotency (W2) + v0.6.7 voting // voting: deadline_s validated (400 on non-finite/non-positive, 30d cap): /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 (ternary extraction, auto-prune, governor-minted needs_evidence) // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1: sovereign governor, untrusted workers — governor scalability fix (backpressure + claim expiry filter + replan receipts)
+const VERSION = "0.7.3"; // v0.7.3: taxonomyOf knows the v0.7.0 error classes — NOT_FOUND/BAD_REQUEST → PERMANENT_FAILURE (a dead model deferred 8 times, re-404ing on every replan), MODEL_MISMATCH → VERIFICATION_FAILURE // v0.7.2: claim RESUME — /v1/claim with resume:true returns the caller's live unexpired claim delegation instead of claiming a new lease (fixes truncated-response claim orphans, 3 in proof attempt 3, 2026-11-21; no schema change) // v0.7.1: gauntlet prefers the inference capability (ORDER BY inference-first) — the claimed gauntlet took caps[0] unordered, so keys whose embedding row was inserted first (mistral, cohere, cloudflare-ai) got an embedding probe with empty input and the claimant correctly refused; inference is the probe that earns the ladder // v0.7.0: ALL capabilities of EVERY key (Zack 2026-11-20): per-model capabilities table (live /models enumeration), model-exact routing + completion (requested model executes exactly or the job refuses/fails — no silent substitution, ever; closes the 00:06 UTC Nov 21 gpt-oss-20b→nemotron-3-ultra-550b mismatch), knobs/dials via D1 key_config + exchange_config + config_log (per-key enable, model allowlists, cost caps, failover order — no redeploy, every change receipted), /v1/capabilities + /v1/config routes, Phase 3 event-driven promotion folded in (completeClaimed re-evaluates the ladder inline) // v0.6.16: security hardening bundle (external review 2026-10-10): P1 distinct-eligible-worker disproof corroboration + atomic prune batch, P1 worker_outcome validated BEFORE the active->completing flip, P1/P2 D1 seal_registry durable replay arbiter (cross-isolate), VERIFY cron drift resolved (deployed==wrangler.toml==*/30 via read-only API; stale 5-min comments fixed) // v0.6.15: D1 read-burn index bundle (read audit): idx_executions_resource, idx_receipts_resource, idx_claims_status_expiry, idx_jobs_created, idx_executions_job, idx_leases_job, idx_leases_resource, idx_resources_provider, idx_leases_state_created (all IF NOT EXISTS, boot-applied); warrantedTierInfo memoized per resource per cron run; fresh path skips window computation (cheap indexed ok24 only) // v0.6.14: D1 read-burn code fixes (wave-29): warrantedTierInfo memoization (autoPromote+demoteCheck share one window computation per resource per cron run), health_observations retention (pruneHealthObservations, 30d, per scheduled run), health_observations CREATE TABLE version-controlled in migrate(), hot-path indexes applied at boot (0001 x2 + 0002 receipts(created_at)) // v0.6.13: migrate guard extended to scheduled() + */5 cron trigger enabled (reaction loop live) — migrate() once per isolate via __migrated guard (was every request: ~40 PRAGMAs + DDL reads/request, blew 75% of daily 5M rows_read free tier) // REDTEAM-2 tally fixes: ballot decision receipt excluded from its own tally (was phantom INVALID vote); verdict extraction takes LAST keyword in tail (was first — misread "Final verdict:" line) // REDTEAM-2 fixes: ballot_id stamped on ALL successful vote receipts (honest votes were invisible to tallies); INV7: SUCCEEDED+{} -> VERIFICATION_FAILURE for non-inference // REDTEAM-2 ballot fixes: ballot receipt job_id sentinel (was 500 on terminal transition); voter validation+slug-dedup pre-insert // 0.6.8: battery v4 R1 HIGH atomic completion idempotency (W2) // 0.6.7: deadline_s validated (400 on non-finite/non-positive, 30d cap) // voting amendments: /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1 // battery v4 R1 HIGH: atomic completion idempotency (W2) + v0.6.7 voting // voting: deadline_s validated (400 on non-finite/non-positive, 30d cap): /v1/ballots, receipt ballot_id, quorum policy // v0.6.3: ternary A1/A2/A3 (ternary extraction, auto-prune, governor-minted needs_evidence) // battery v4: INTEGRITY claimed-probe fix + max_cost<=spend_authority // battery v3 fixes: verify backpressure + claim expiry re-check // Worker Protocol v1: sovereign governor, untrusted workers — governor scalability fix (backpressure + claim expiry filter + replan receipts)
 
 /* ------------------------------------------------------------------ */
 /* Seed registry — the known world. Registered idempotently via /v1/seed */
@@ -471,6 +475,21 @@ async function migrate(db) {
   await ensure("executions", "lease_id", "lease_id TEXT");
   await ensure("executions", "failure_taxonomy", "failure_taxonomy TEXT");
   await ensure("executions", "request_hash", "request_hash TEXT");
+  // M2 (2026-11-20): base DDL for receipts, reconstructed from the INSERT
+  // sites (D3 fix — the table previously had no base DDL in the repo).
+  // The pre-existing ensure() calls below remain as the upgrade path for
+  // databases created before this DDL existed.
+  await db.prepare(`CREATE TABLE IF NOT EXISTS receipts (
+    id TEXT PRIMARY KEY, job_id TEXT NOT NULL, execution_id TEXT,
+    attempt_id TEXT, provider TEXT, resource TEXT, started_at TEXT,
+    finished_at TEXT, input_hash TEXT, output_hash TEXT, result TEXT,
+    cost REAL, cost_before REAL, cost_after REAL, quota_before TEXT,
+    quota_after TEXT, health_before TEXT, health_after TEXT,
+    policy_version TEXT, lease TEXT, decision TEXT, fallback_chain TEXT,
+    errors TEXT, claim_id TEXT, worker_outcome TEXT,
+    ternary_verdict INTEGER, ballot_id TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    env TEXT, seal TEXT, sig TEXT, payload_hash TEXT)`).run();
   await ensure("receipts", "attempt_id", "attempt_id TEXT");
   await ensure("receipts", "policy_version", "policy_version TEXT");
   await ensure("receipts", "lease", "lease TEXT");
@@ -529,6 +548,11 @@ async function migrate(db) {
     state TEXT DEFAULT 'open', verdict TEXT, tally TEXT,
     created_at TEXT DEFAULT (datetime('now')))`).run();
   await ensure("receipts", "ballot_id", "ballot_id TEXT"); // A2: additive, optional
+  // M2 (2026-11-20): verified-envelope columns on the receipt row
+  await ensure("receipts", "env", "env TEXT");
+  await ensure("receipts", "seal", "seal TEXT");
+  await ensure("receipts", "sig", "sig TEXT");
+  await ensure("receipts", "payload_hash", "payload_hash TEXT");
   await db.prepare(`CREATE TABLE IF NOT EXISTS ballot_policy (
     id TEXT PRIMARY KEY, voters TEXT NOT NULL, quorum_rule TEXT DEFAULT 'majority',
     deadline_s INTEGER DEFAULT 600, tie_policy TEXT DEFAULT 'unknown')`).run();
@@ -552,7 +576,12 @@ async function migrate(db) {
   if (!pol) await db.prepare(
     "INSERT INTO ballot_policy (id,voters,quorum_rule,deadline_s,tie_policy) VALUES (?,?,?,?,?)"
   ).bind("default",
-    JSON.stringify(["openai/gpt-oss-20b","z-ai/glm-5.3-flash","nvidia/nemotron-3.5-lightning-30b-a3b"]),
+    // 2026-11-19 refresh: every voter is on the live /v1/models list AND
+    // has serving evidence (dracon.uk prober + direct probes). Replaces
+    // openai/gpt-oss-20b (EOL, absent from /v1/models, 0% serving) and
+    // z-ai/glm-5.3-flash (listed but 2x 90s timeout, not answering).
+    // Keep this seed in sync with the live row (same 5 voters).
+    JSON.stringify(["nvidia/nemotron-3.5-lightning-30b-a3b","poolside/laguna-xs-2.1","google/gemma-4-31b-it","nvidia/nemotron-3.5-bolt-e4b","nvidia/nemotron-3-ultra-550b-a55b"]),
     "majority", 600, "unknown").run();
   // v0.6.14 (wave-29, d1-burn-codefixes): health_observations was created
   // out-of-band in D1 — the schema lived nowhere in the repo. Version-control
@@ -598,6 +627,35 @@ async function migrate(db) {
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_resource ON leases (resource_id)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_resources_provider ON resources (provider_id)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_state_created ON leases (state, created_at)`).run();
+  // v0.7.0 (2026-11-20, Zack: ALL capabilities of EVERY key + knobs/dials):
+  // model_capabilities — one row per (resource, model) from the live
+  // /models enumeration (capability-enumeration-2026-11-20.json). A listing
+  // is a lead, not capacity: rows carry listed_at + last_executed_at so
+  // the ladder can tell listed from proven. cost: free|paid|unknown|
+  // unfunded (Friendli 0 credits). key_config — the knobs, adjustable
+  // without redeploy via POST /v1/config; every change receipted in
+  // config_log (append-only) + evidence_log. exchange_config — global
+  // knobs; allow_paid=0 is the master kill-switch for paid execution
+  // (fail-closed default; flipping it is a spend decision for Zack).
+  await db.prepare(`CREATE TABLE IF NOT EXISTS model_capabilities (
+    resource_id TEXT NOT NULL, model TEXT NOT NULL, capability TEXT NOT NULL,
+    cost TEXT DEFAULT 'unknown', source TEXT, listed_at TEXT,
+    last_executed_at TEXT, last_error TEXT,
+    PRIMARY KEY (resource_id, model))`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_model_caps_model ON model_capabilities (model)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_model_caps_capability ON model_capabilities (capability)`).run();
+  await db.prepare(`CREATE TABLE IF NOT EXISTS key_config (
+    key_id TEXT PRIMARY KEY, enabled INTEGER DEFAULT 1, allowlist TEXT,
+    cost_cap REAL, failover_order INTEGER DEFAULT 100,
+    updated_at TEXT, updated_by TEXT)`).run();
+  await db.prepare(`CREATE TABLE IF NOT EXISTS config_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT (datetime('now')),
+    actor TEXT, scope TEXT, key_id TEXT, field TEXT,
+    from_value TEXT, to_value TEXT, reason TEXT)`).run();
+  await db.prepare(`CREATE TABLE IF NOT EXISTS exchange_config (
+    key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`).run();
+  await db.prepare("INSERT OR IGNORE INTO exchange_config (key,value,updated_at) VALUES ('allow_paid','0',?)")
+    .bind(now()).run();
   const done = await db.prepare("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'").first();
   if (!done || done.c === 0) await backfillEvidence(db);
 }
@@ -827,6 +885,16 @@ function taxonomyOf(error_class) {
     case "AUTH_ERROR": return "AUTH_FAILURE";
     case "NO_ADAPTER": return "CAPABILITY_FAILURE";
     case "VERIFICATION_FAILED": return "VERIFICATION_FAILURE";
+    // v0.7.3: the v0.7.0 error classes fell through to the default
+    // RETRYABLE_FAILURE — a dead model (404) deferred its job 8 times,
+    // re-404ing on every replan. These are permanent by definition:
+    // the model is gone (NOT_FOUND), the request is malformed
+    // (BAD_REQUEST), or the delegation disagreed with the job
+    // (MODEL_MISMATCH — a verification failure, same as model_match=0).
+    // Re-verification happens across jobs, not within one job's 8 defers.
+    case "NOT_FOUND":
+    case "BAD_REQUEST": return "PERMANENT_FAILURE";
+    case "MODEL_MISMATCH": return "VERIFICATION_FAILURE";
     default: return "RETRYABLE_FAILURE";
   }
 }
@@ -1038,14 +1106,29 @@ async function completeClaimed(db, b, worker) {
 
   // Requested vs actually-executed capacity (W9). The receipt exposes the
   // discrepancy; requested capacity ≠ actually executed capacity.
+  // v0.7.0 EXACT-MODEL RULE (Zack 2026-11-20 — closes the 00:06 UTC Nov 21
+  // mismatch: job asked openai/gpt-oss-20b, claimant executed
+  // nvidia/nemotron-3-ultra-550b, model_match=0, still recorded ok): the
+  // requested model is the JOB's model first (the claim binds it), the
+  // resource config's model only as the unpinned default. A SUCCEEDED
+  // completion whose executed model differs from the requested model is a
+  // VERIFICATION_FAILURE (error_class MODEL_MISMATCH) — the work was not
+  // done as specified. No silent substitution, ever. Failover-pool
+  // resources (config.model_exact === false, e.g. ai-router) are exempt:
+  // they serve unpinned jobs only and report model_actual honestly.
   const rconf = JSON.parse(resource.config || "{}");
-  const requested_model = rconf.model || null;
+  const modelExact = rconf.model_exact !== false;
+  const requested_model = (spec.input && spec.input.model) || rconf.model || null;
   const actual_model = b.model_actual || null;
   const model_match = requested_model && actual_model ? (requested_model === actual_model ? 1 : 0) : null;
-  if (model_match === 0)
+  let mismatchFailure = false;
+  if (model_match === 0) {
     await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
       .bind(resource.id, resource.evidence_state, resource.evidence_state, "model-mismatch",
         `requested ${requested_model}, provider executed ${actual_model}`).run();
+    await db.prepare("UPDATE model_capabilities SET last_error=? WHERE resource_id=? AND model=?")
+      .bind(`model-mismatch: requested ${requested_model}, executed ${actual_model}`, resource.id, requested_model).run();
+  }
 
   // Independent verification: SUCCEEDED with empty content is not success.
   // The worker cannot manufacture semantic success (W8).
@@ -1070,9 +1153,17 @@ async function completeClaimed(db, b, worker) {
       ? "worker reported SUCCEEDED with empty/missing content for inference"
       : "worker reported SUCCEEDED with empty output (INV7)";
     else output_hash = await sha256hex(JSON.stringify(b.output));
+    // v0.7.0: exact-model verification. Content present but the WRONG model
+    // executed is not success — the requested work was not done.
+    if (verified && model_match === 0 && modelExact) {
+      verified = false;
+      mismatchFailure = true;
+      verifyNote = `model mismatch: requested ${requested_model}, executed ${actual_model} — exact model required, no substitution`;
+    }
   }
   const finalTaxonomy = succeeded ? (verified ? "ok" : "VERIFICATION_FAILURE") : taxonomy;
   const failed = !succeeded || !verified;
+  const failClass = mismatchFailure ? "MODEL_MISMATCH" : verifyNote ? "VERIFICATION_FAILED" : error_class;
 
   // QUARANTINED is a worker signal; quarantine itself is the governor's
   // decision. A worker crying wolf on a healthy resource only records a
@@ -1104,9 +1195,30 @@ async function completeClaimed(db, b, worker) {
   const usage_json = b.output && b.output.usage ? JSON.stringify(b.output.usage) : null;
   await db.prepare("UPDATE executions SET result=?, output_hash=?, error=?, error_class=?, failure_taxonomy=?, finished_at=?, requested_model=?, actual_model=?, model_match=?, usage_json=? WHERE id=?")
     .bind(failed ? "error" : "ok", output_hash, failed ? (verifyNote || b.error || null) : null,
-      failed ? (verifyNote ? "VERIFICATION_FAILED" : error_class) : null,
+      failed ? failClass : null,
       finalTaxonomy, now(), requested_model, actual_model, model_match, usage_json, ex.id).run();
   await db.prepare("UPDATE leases SET state=? WHERE id=?").bind(failed ? "released" : "consumed", lease_id).run();
+
+  // v0.7.0 per-model evidence: a proven execution stamps the model row
+  // (listed -> proven, per model, not just per resource). A dead model
+  // (claimant reported NOT_FOUND and refused without executing) is
+  // recorded; if it was the resource's named default model, the resource
+  // is demoted — it must not keep routing to a dead model.
+  if (!failed && actual_model) {
+    await db.prepare("UPDATE model_capabilities SET last_executed_at=?, last_error=NULL WHERE resource_id=? AND model=?")
+      .bind(now(), resource.id, actual_model).run();
+  }
+  if (!succeeded && error_class === "NOT_FOUND" && requested_model) {
+    await db.prepare("UPDATE model_capabilities SET last_error=? WHERE resource_id=? AND model=?")
+      .bind("model unavailable at provider (404/410) — claimant refused without executing", resource.id, requested_model).run();
+    await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
+      .bind(resource.id, resource.evidence_state, resource.evidence_state, "model-unavailable",
+        `model ${requested_model} gone at provider (404/410); claimant refused, no substitution`).run();
+    if (requested_model === rconf.model) {
+      await setEvidence(db, resource.id, "UNKNOWN", "model-unavailable",
+        `default model ${requested_model} gone at provider — re-list before routing`, true);
+    }
+  }
 
   // Terminal state: retryable/time-bound failures defer for replan (bounded);
   // anything else fails honestly with its taxonomy. Never a bare "failed".
@@ -1133,8 +1245,9 @@ async function completeClaimed(db, b, worker) {
   await db.prepare(
     `INSERT INTO receipts (id,job_id,execution_id,attempt_id,provider,resource,started_at,finished_at,
       input_hash,output_hash,result,cost,cost_before,cost_after,quota_before,quota_after,
-      health_before,health_after,policy_version,lease,decision,fallback_chain,errors,claim_id,worker_outcome)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      health_before,health_after,policy_version,lease,decision,fallback_chain,errors,claim_id,worker_outcome,
+      env,seal,sig,payload_hash)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(receipt_id, job.id, ex.id, ex.id, provider.id, resource.id, ex.started_at, now(),
     ex.request_hash, output_hash, state === "done" ? "ok" : state, measured_cost, 0, measured_cost,
     String(quota_before), String(quota_after), health_before, resource.state, policy_version,
@@ -1144,10 +1257,24 @@ async function completeClaimed(db, b, worker) {
       output: !failed ? b.output : null }),
     JSON.stringify([{ attempt: ex.id, claim: claim_id, resource: resource.id, lease: lease_id, executed: true,
       taxonomy: finalTaxonomy, worker_outcome: outcome,
-      error_class: failed ? (verifyNote ? "VERIFICATION_FAILED" : error_class) : null,
+      error_class: failed ? failClass : null,
       error: failed ? (verifyNote || b.error) : null }]),
     failed ? `${resource.id} [${finalTaxonomy}]: ${verifyNote || b.error}` : null,
-    claim_id, outcome).run();
+    claim_id, outcome,
+    (b.envelope && b.envelope.env) || null,
+    (b.envelope && b.envelope.seal) || null,
+    (b.envelope && b.envelope.sig) || null,
+    (b.envelope && b.envelope.payload_hash) || null).run();
+
+  // EVENT-DRIVEN PROMOTION (Phase 3, 2026-11-20): evidence moves when
+  // evidence arrives. This completion just wrote its ok observation +
+  // executions row, so re-evaluate THIS resource's ladder inline —
+  // ~5 indexed COUNTs — instead of waiting for the */30 full-table scan.
+  // No-ops when nothing is warranted (setEvidence skips from==to).
+  // Promotion only on success; demotion applies on any terminal state
+  // (stale usable tiers must fall even when this run failed).
+  if (!failed) await autoPromote(db, resource.id);
+  await demoteCheck(db, resource.id);
 
   // PROTOCOL AMENDMENTS (Zackary approved 2026-10-07, v0.6.3):
   // A1 — governor-side ternary extraction: the worker's output may carry a
@@ -1595,7 +1722,14 @@ function validateJob(spec) {
 async function govern(db, spec) {
   // HARD PRE-EXECUTION GATES, in order:
   //   IDENTITY → AUTHORITY → DATA → CAPABILITY → EVIDENCE → QUOTA → COST →
-  //   INTEGRITY → (EFFICIENCY scores survivors; scoring is never authorization)
+  //   MODEL → CONFIG → INTEGRITY → (EFFICIENCY scores survivors; scoring is never authorization)
+  // MODEL (v0.7.0): the effective model (job's pinned model, else the
+  // resource's config default) must be a listed model_capabilities row for
+  // THIS resource — a pinned model never routes to a failover pool, and a
+  // model unlisted for a resource never routes there. CONFIG (v0.7.0):
+  // per-key knobs from key_config (enabled, allowlist, cost_cap) + the
+  // global allow_paid kill-switch. Paid models need spend authority AND
+  // allow_paid=1; unfunded keys refuse.
   // LEASE and EXECUTE are recorded later, per attempt, in runJob().
   // No score, retry, failover, urgency, or human convenience bypasses a gate.
   const trace = []; // every gate decision, in order
@@ -1605,7 +1739,7 @@ async function govern(db, spec) {
   const rejected = [];
   // Gates not reached are recorded as vacuous — explicitly labeled, never
   // faked as passed. A verifier can distinguish "evaluated" from "vacuous".
-  const GATE_ORDER = ["IDENTITY", "AUTHORITY", "DATA", "CAPABILITY", "EVIDENCE", "QUOTA", "COST", "INTEGRITY", "EFFICIENCY"];
+  const GATE_ORDER = ["IDENTITY", "AUTHORITY", "DATA", "CAPABILITY", "EVIDENCE", "QUOTA", "COST", "MODEL", "CONFIG", "INTEGRITY", "EFFICIENCY"];
   const vacuous = () => {
     const recorded = new Set(trace.map((x) => x.gate));
     for (const gn of GATE_ORDER) if (!recorded.has(gn)) gate(gn, true, "vacuous — no candidate reached this gate", {});
@@ -1636,6 +1770,25 @@ async function govern(db, spec) {
     { usable: usable.map((r) => r.id), refused: rejected.filter((x) => x.gate === "EVIDENCE").map((x) => x.resource) });
   candidates = usable;
   if (!candidates.length) { vacuous(); return { trace, selected: null, rejected, ranked: [] }; }
+
+  // v0.7.0 KNOBS: per-key config + global config, loaded once per govern()
+  // call (2 cheap reads). keyConfigs: key_id -> {enabled, allowlist,
+  // cost_cap, failover_order}. allowPaid: the global paid-execution
+  // kill-switch (exchange_config.allow_paid, default 0 = fail-closed).
+  const keyConfigs = new Map();
+  try {
+    const kcRows = await db.prepare("SELECT * FROM key_config").all();
+    for (const row of (kcRows.results || [])) {
+      let allowlist = null;
+      try { allowlist = row.allowlist ? JSON.parse(row.allowlist) : null; } catch { allowlist = null; }
+      keyConfigs.set(row.key_id, { enabled: row.enabled, allowlist, cost_cap: row.cost_cap, failover_order: row.failover_order });
+    }
+  } catch { /* pre-migration: no key_config table yet — no knob enforcement */ }
+  let allowPaid = false;
+  try {
+    const ap = await db.prepare("SELECT value FROM exchange_config WHERE key='allow_paid'").first();
+    allowPaid = ap && ap.value === "1";
+  } catch { allowPaid = false; }
 
   const policies = await db.prepare("SELECT * FROM policies").all();
   const survivors = [];
@@ -1725,6 +1878,84 @@ async function govern(db, spec) {
         taxonomy: "POLICY_FAILURE", retryable: false });
       continue;
     }
+    // MODEL + CONFIG (v0.7.0) — exact-model routing and per-key knobs.
+    // Applies only to model-serving capabilities (inference, embedding).
+    // The effective model is the job's pinned model, else the resource's
+    // config default. It must be a listed model_capabilities row for THIS
+    // resource (or the resource's config.model binding for legacy
+    // unlisted resources); a pinned model never routes to a failover
+    // pool (model_exact=false); paid models need spend authority AND the
+    // global allow_paid knob; unfunded keys refuse; allowlist + cost_cap
+    // + key enable come from key_config.
+    let effModel = null, modelRow = null;
+    if (spec.capability === "inference" || spec.capability === "embedding") {
+      const keyId = cfg.key_id || null;
+      const kc = keyId ? keyConfigs.get(keyId) : null;
+      const modelExact = cfg.model_exact !== false;
+      const wantModel = (spec.input && typeof spec.input.model === "string" && spec.input.model) || null;
+      effModel = wantModel || cfg.model || null;
+      if (kc && kc.enabled === 0) {
+        rejected.push({ resource: r.id, gate: "CONFIG", reason: `key ${keyId} disabled by config`, taxonomy: "POLICY_FAILURE", retryable: false });
+        continue;
+      }
+      if (!effModel) {
+        rejected.push({ resource: r.id, gate: "MODEL", reason: "no model bound (job pins none, resource has no default)", taxonomy: "CAPABILITY_FAILURE", retryable: false });
+        continue;
+      }
+      if (wantModel && !modelExact) {
+        rejected.push({ resource: r.id, gate: "MODEL", reason: "failover pool cannot serve a pinned model (model_exact=false)", taxonomy: "CAPABILITY_FAILURE", retryable: false });
+        continue;
+      }
+      if (kc && kc.allowlist && !kc.allowlist.includes(effModel)) {
+        rejected.push({ resource: r.id, gate: "CONFIG", reason: `model ${effModel} not in key ${keyId} allowlist`, taxonomy: "POLICY_FAILURE", retryable: false });
+        continue;
+      }
+      try {
+        modelRow = await db.prepare("SELECT * FROM model_capabilities WHERE resource_id=? AND model=?")
+          .bind(r.id, effModel).first();
+      } catch { modelRow = null; }
+      if (modelRow) {
+        if (modelRow.capability !== spec.capability) {
+          rejected.push({ resource: r.id, gate: "MODEL", reason: `model ${effModel} serves ${modelRow.capability}, job needs ${spec.capability}`, taxonomy: "CAPABILITY_FAILURE", retryable: false });
+          continue;
+        }
+        if (modelRow.cost === "unfunded") {
+          rejected.push({ resource: r.id, gate: "COST", reason: `key ${keyId || r.provider_id} unfunded (0 credits) — cannot execute`, taxonomy: "COST_FAILURE", retryable: false });
+          continue;
+        }
+        if (modelRow.cost === "paid") {
+          if (!allowPaid) {
+            rejected.push({ resource: r.id, gate: "COST", reason: `model ${effModel} is paid and global allow_paid=0 (spend decision required)`, taxonomy: "COST_FAILURE", retryable: false });
+            continue;
+          }
+          if (!(spend_auth > 0)) {
+            rejected.push({ resource: r.id, gate: "COST", reason: `model ${effModel} is paid; job has no spend_authority`, taxonomy: "COST_FAILURE", retryable: false });
+            continue;
+          }
+          if (kc && kc.cost_cap != null && spend_auth > kc.cost_cap) {
+            rejected.push({ resource: r.id, gate: "CONFIG", reason: `spend_authority ${spend_auth} exceeds key ${keyId} cost_cap ${kc.cost_cap}`, taxonomy: "POLICY_FAILURE", retryable: false });
+            continue;
+          }
+        }
+      } else {
+        // No model row: legacy fallback. If the resource HAS rows, the
+        // model is unlisted for it — refuse (never route blind). If it
+        // has no rows at all (legacy lanes), the config.model binding
+        // governs.
+        let anyRow = null;
+        try {
+          anyRow = await db.prepare("SELECT 1 AS x FROM model_capabilities WHERE resource_id=? LIMIT 1").bind(r.id).first();
+        } catch { anyRow = null; }
+        if (anyRow) {
+          rejected.push({ resource: r.id, gate: "MODEL", reason: `model ${effModel} not listed for ${r.id}`, taxonomy: "CAPABILITY_FAILURE", retryable: false });
+          continue;
+        }
+        if (wantModel && cfg.model && cfg.model !== wantModel) {
+          rejected.push({ resource: r.id, gate: "MODEL", reason: `resource serves ${cfg.model}, not ${wantModel}`, taxonomy: "CAPABILITY_FAILURE", retryable: false });
+          continue;
+        }
+      }
+    }
     // INTEGRITY — re-read fresh state; quarantined/stale/integrity-invalid →
     // REVALIDATE (one bounded probe) or BLOCK. Never trust the shortlist.
     const fresh = await db.prepare("SELECT state,evidence_state FROM resources WHERE id=?").bind(r.id).first();
@@ -1757,11 +1988,11 @@ async function govern(db, spec) {
       rejected.push({ resource: r.id, gate: "INTEGRITY", reason: intReject, taxonomy: "RETRYABLE_FAILURE", retryable: true });
       continue;
     }
-    survivors.push({ r, cfg, quota: q, adapter, effective_cost });
+    survivors.push({ r, cfg, quota: q, adapter, effective_cost, model: effModel, modelRow });
   }
 
   // Record per-gate outcomes (aggregates; per-candidate detail in rejected[]).
-  for (const gn of ["IDENTITY", "AUTHORITY", "DATA", "EVIDENCE", "QUOTA", "COST", "INTEGRITY"]) {
+  for (const gn of ["IDENTITY", "AUTHORITY", "DATA", "EVIDENCE", "QUOTA", "COST", "MODEL", "CONFIG", "INTEGRITY"]) {
     const fails = rejected.filter((x) => x.gate === gn);
     const passes = survivors.length;
     if (fails.length) gate(gn, false, `${fails.length} candidate(s) rejected at ${gn}`, { resources: fails.map((x) => x.resource) });
@@ -1791,20 +2022,25 @@ async function govern(db, spec) {
     const economic = +(expected_success * (1 - human_cost) * (s.effective_cost === 0 ? 1 : Math.max(0, 1 - s.effective_cost * 5))).toFixed(4);
     const score = +(0.20 * 1.0 + 0.15 * reliability + 0.10 * latencyScore + 0.10 * availScore
       + 0.10 * quotaScore + 0.10 * costScore + 0.05 * sovScore + 0.20 * economic).toFixed(4);
+    // v0.7.0: failover_order (key_config) breaks score ties — lower runs
+    // first. Not a score input: it never authorizes, it only orders.
+    const kc = s.cfg && s.cfg.key_id ? keyConfigs.get(s.cfg.key_id) : null;
+    const failoverOrder = kc ? (kc.failover_order ?? 100) : 100;
     scored.push({
-      resource: s.r.id, score,
+      resource: s.r.id, score, model: s.model || null,
       breakdown: { capability_fit: 1.0, reliability: +reliability.toFixed(3), latency_ms: Math.round(avgLat), latency_score: +latencyScore.toFixed(3),
         availability: availScore, quota_remaining: +quotaScore.toFixed(3), cost_class: s.r.cost_class, cost_score: costScore,
         sovereignty: s.r.sovereignty, sovereignty_score: sovScore, health_probes: probes,
-        effective_cost: s.effective_cost, expected_success, human_intervention_cost: human_cost, economic_score: economic },
+        effective_cost: s.effective_cost, expected_success, human_intervention_cost: human_cost, economic_score: economic,
+        failover_order: failoverOrder },
     });
   }
-  scored.sort((a, b) => b.score - a.score);
+  scored.sort((a, b) => (b.score - a.score) || (a.breakdown.failover_order - b.breakdown.failover_order));
   const winner = scored[0];
   for (const sc of scored.slice(1)) rejected.push({ resource: sc.resource, gate: "EFFICIENCY", reason: `outscored by ${winner.resource} (${sc.score} < ${winner.score})`, taxonomy: null, retryable: false });
   gate("EFFICIENCY", true, `selected ${winner.resource} (score ${winner.score}), ${scored.length - 1} fallback(s)`, { candidates: scored });
-  return { trace, selected: { resource_id: winner.resource, score: winner.score, breakdown: winner.breakdown }, rejected,
-    ranked: scored.map((sc) => ({ resource_id: sc.resource, score: sc.score, breakdown: sc.breakdown })) };
+  return { trace, selected: { resource_id: winner.resource, score: winner.score, breakdown: winner.breakdown, model: winner.model || null }, rejected,
+    ranked: scored.map((sc) => ({ resource_id: sc.resource, score: sc.score, breakdown: sc.breakdown, model: sc.model || null })) };
 }
 
 function costOf(r) {
@@ -2274,7 +2510,14 @@ async function handle(request, env) {
 
   if (path === "/v1/health" && request.method === "GET") {
     const n = await db.prepare("SELECT COUNT(*) c FROM resources").first();
-    return json({ ok: true, version: VERSION, resources: (n && n.c) || 0, at: now() });
+    let caps = 0, keys = 0;
+    try {
+      const c = await db.prepare("SELECT COUNT(*) c FROM model_capabilities").first();
+      caps = (c && c.c) || 0;
+      const k = await db.prepare("SELECT COUNT(*) c FROM key_config").first();
+      keys = (k && k.c) || 0;
+    } catch { /* pre-migration */ }
+    return json({ ok: true, version: VERSION, resources: (n && n.c) || 0, capabilities: caps, keys, at: now() });
   }
 
   // ---- Worker Protocol v1 endpoints -------------------------------------
@@ -2322,6 +2565,44 @@ async function handle(request, env) {
     const need = res.claimant_trust_required || "any";
     if (need === "local" && a.worker.trust_class !== "local")
       return json({ claimed: false, error: "resource requires local-trust claimant" }, 403);
+    // v0.7.2 CLAIM RESUME: a claim response lost to transport (truncated
+    // read) leaves the lease claimed server-side while the worker saw an
+    // error. The worker retries with resume:true; return ITS live
+    // unexpired claim delegation instead of claiming a new lease (the
+    // blind retry used to return claimed:false and orphan the lease —
+    // 3 orphans in proof attempt 3, 2026-11-21). A worker holds at most
+    // one active claim per resource (single-threaded drain), so the
+    // latest-expiring active claim is the lost one. No live claim of
+    // mine → fall through to a fresh claim.
+    if (b.resume === true) {
+      const mine = await db.prepare(
+        `SELECT c.claim_id, c.job_id, c.lease_id, c.lease_expiry, c.policy_snapshot,
+                c.receipt_requirements, c.idempotency_key, j.spec, e.id AS attempt_id
+         FROM claims c JOIN jobs j ON j.id=c.job_id JOIN leases l ON l.id=c.lease_id
+         LEFT JOIN executions e ON e.claim_id=c.claim_id
+         WHERE c.worker_id=? AND c.resource_id=? AND c.status='active'
+           AND l.state='claimed' AND c.lease_expiry > ?
+         ORDER BY c.lease_expiry DESC LIMIT 1`)
+        .bind(a.worker.worker_id, b.resource_id, now()).first();
+      if (mine) {
+        const rspec = JSON.parse(mine.spec);
+        const rconf = JSON.parse(res.config || "{}");
+        return json({ claimed: true, resumed: true,
+          delegation: {
+            claim_id: mine.claim_id, resource_id: b.resource_id,
+            capability: rspec.capability, input: rspec.input,
+            policy_snapshot: JSON.parse(mine.policy_snapshot),
+            lease_expiry: mine.lease_expiry, attempt: mine.attempt_id,
+            idempotency_key: mine.idempotency_key,
+            receipt_requirements: JSON.parse(mine.receipt_requirements),
+            credential_ref: rconf.credential_ref || null,
+            requested_model: (rspec.input && rspec.input.model) || rconf.model || null,
+            model_exact: rconf.model_exact !== false,
+          },
+          lease_id: mine.lease_id, job_id: mine.job_id,
+          attempt_id: mine.attempt_id, at: now() });
+      }
+    }
     // Oldest unclaimed delegation for this resource.
     const d = await db.prepare(
       `SELECT l.id AS lease_id, l.job_id, l.expires_at, j.spec
@@ -2374,7 +2655,12 @@ async function handle(request, env) {
         attempt: attempt_id, idempotency_key: spec.idempotency_key || d.job_id,
         receipt_requirements,
         credential_ref: rconf.credential_ref || null,
-        requested_model: rconf.model || null,
+        // v0.7.0: the delegation binds the JOB's requested model first —
+        // the resource default only when the job pins none. The claimant
+        // must execute this exact model or refuse (MODEL_MISMATCH);
+        // model_exact=false pools (ai-router) serve unpinned jobs only.
+        requested_model: (spec.input && spec.input.model) || rconf.model || null,
+        model_exact: rconf.model_exact !== false,
       },
       lease_id: d.lease_id, job_id: d.job_id, attempt_id, at: now() });
   }
@@ -2451,7 +2737,13 @@ async function handle(request, env) {
       // claim/complete; its observations and receipts feed the normal
       // evidence ladder. No shortcuts — every tier is earned from recorded
       // evidence, exactly like Worker-executed resources.
-      const caps = await db.prepare("SELECT capability FROM resource_capabilities WHERE resource_id=?").bind(rid).all();
+      // v0.7.1: prefer the inference capability for the probe. The old
+      // unordered caps[0] took embedding first for keys whose embedding
+      // row was inserted first (mistral, cohere, cloudflare-ai) and the
+      // gauntlet built an embedding probe with empty input, which the
+      // claimant correctly refused. Inference is the probe that earns
+      // the ladder; embedding-only resources still probe embedding.
+      const caps = await db.prepare("SELECT capability FROM resource_capabilities WHERE resource_id=? ORDER BY CASE WHEN capability='inference' THEN 0 ELSE 1 END").bind(rid).all();
       const cap = (caps.results || [])[0];
       if (!cap) {
         step("ACCESSIBLE", false, "no capabilities registered — nothing to verify");
@@ -2576,6 +2868,158 @@ async function handle(request, env) {
       items,
       note: "Only AVAILABLE/VERIFIED resources count. A provider listing is not capacity.",
     });
+  }
+
+  // ---- v0.7.0: CAPABILITIES + KNOBS/DIALS (Zack 2026-11-20) ----------------
+  // /v1/capabilities lists every model the Exchange can route, per key,
+  // per model — from model_capabilities (live /models enumeration), not
+  // from a static list. /v1/config is the knobs: per-key enable,
+  // allowlist, cost cap, failover order + the global allow_paid
+  // kill-switch. Every change is receipted in config_log + evidence_log.
+  // All four routes sit behind the Exchange-key gate above.
+  if (path === "/v1/capabilities" && request.method === "GET") {
+    const rows = await db.prepare(
+      `SELECT mc.resource_id, mc.model, mc.capability, mc.cost, mc.source, mc.listed_at,
+              mc.last_executed_at, mc.last_error,
+              r.provider_id, r.evidence_state, r.state, r.config
+       FROM model_capabilities mc JOIN resources r ON r.id = mc.resource_id
+       ORDER BY mc.resource_id, mc.model`).all();
+    const kcRows = await db.prepare("SELECT * FROM key_config").all();
+    const kcMap = new Map((kcRows.results || []).map((k) => [k.key_id, k]));
+    const qKey = url.searchParams.get("key");
+    const qCap = url.searchParams.get("capability");
+    const qCost = url.searchParams.get("cost");
+    const qUsable = url.searchParams.get("usable") === "1";
+    const items = [];
+    const byCap = {}, byCost = {};
+    let usableCount = 0, provenCount = 0;
+    for (const row of (rows.results || [])) {
+      let keyId = null;
+      try { keyId = JSON.parse(row.config || "{}").key_id || null; } catch { keyId = null; }
+      const kc = keyId ? kcMap.get(keyId) : null;
+      const keyEnabled = kc ? kc.enabled !== 0 : true;
+      const usable = EVIDENCE_USABLE.includes(row.evidence_state) && row.state !== "QUARANTINED" && keyEnabled
+        && row.cost !== "unfunded";
+      const proven = !!row.last_executed_at;
+      if (qKey && keyId !== qKey) continue;
+      if (qCap && row.capability !== qCap) continue;
+      if (qCost && row.cost !== qCost) continue;
+      if (qUsable && !usable) continue;
+      byCap[row.capability] = (byCap[row.capability] || 0) + 1;
+      byCost[row.cost] = (byCost[row.cost] || 0) + 1;
+      if (usable) usableCount++;
+      if (proven) provenCount++;
+      items.push({ resource_id: row.resource_id, key_id: keyId, provider_id: row.provider_id,
+        model: row.model, capability: row.capability, cost: row.cost, source: row.source,
+        listed_at: row.listed_at, last_executed_at: row.last_executed_at, last_error: row.last_error,
+        evidence_state: row.evidence_state, state: row.state, key_enabled: keyEnabled,
+        usable, proven });
+    }
+    return json({ at: now(), total: items.length, usable: usableCount, proven: provenCount,
+      by_capability: byCap, by_cost: byCost, capabilities: items,
+      note: "Listed is not proven: proven means last_executed_at is set. Usable means the resource is verified, the key is enabled, and the model is funded." });
+  }
+
+  if (path === "/v1/config" && request.method === "GET") {
+    const kcRows = await db.prepare("SELECT * FROM key_config ORDER BY failover_order, key_id").all();
+    const gRows = await db.prepare("SELECT * FROM exchange_config").all();
+    const logRows = await db.prepare("SELECT * FROM config_log ORDER BY id DESC LIMIT 20").all();
+    const keys = (kcRows.results || []).map((k) => {
+      let allowlist = null;
+      try { allowlist = k.allowlist ? JSON.parse(k.allowlist) : null; } catch { allowlist = null; }
+      return { key_id: k.key_id, enabled: k.enabled !== 0, allowlist, cost_cap: k.cost_cap,
+        failover_order: k.failover_order, updated_at: k.updated_at, updated_by: k.updated_by };
+    });
+    const global = {};
+    for (const g of (gRows.results || [])) global[g.key] = g.value;
+    return json({ at: now(), keys, global, recent_changes: logRows.results || [] });
+  }
+
+  if (path === "/v1/config/log" && request.method === "GET") {
+    const qKey = url.searchParams.get("key_id");
+    const rows = qKey
+      ? await db.prepare("SELECT * FROM config_log WHERE key_id=? ORDER BY id DESC LIMIT 100").bind(qKey).all()
+      : await db.prepare("SELECT * FROM config_log ORDER BY id DESC LIMIT 100").all();
+    return json({ at: now(), log: rows.results || [] });
+  }
+
+  if (path === "/v1/config" && request.method === "POST") {
+    let b;
+    try { b = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
+    const actor = "bearer:exchange-key";
+    const reason = String(b.reason || "").slice(0, 200);
+    if (b.scope === "global") {
+      if (b.field !== "allow_paid") return json({ error: "global field must be allow_paid" }, 400);
+      if (b.value !== 0 && b.value !== 1 && b.value !== "0" && b.value !== "1")
+        return json({ error: "allow_paid must be 0 or 1" }, 400);
+      const to = String(b.value);
+      const cur = await db.prepare("SELECT value FROM exchange_config WHERE key='allow_paid'").first();
+      const from = cur ? cur.value : "0";
+      await db.prepare("INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('allow_paid',?,?)")
+        .bind(to, now()).run();
+      const ins = await db.prepare("INSERT INTO config_log (actor,scope,key_id,field,from_value,to_value,reason) VALUES (?,?,?,?,?,?,?)")
+        .bind(actor, "global", null, "allow_paid", from, to, reason).run();
+      await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
+        .bind("config:global", "allow_paid=" + from, "allow_paid=" + to, "config-change",
+          `allow_paid ${from} -> ${to} by ${actor}${reason ? " (" + reason + ")" : ""}`).run();
+      return json({ changed: true, scope: "global", field: "allow_paid", from, to,
+        log_id: (ins.meta && ins.meta.last_row_id) || null, at: now(),
+        note: to === "1" ? "PAID EXECUTION ENABLED — paid models may now execute with spend authority" : "paid execution disabled" });
+    }
+    if (b.scope !== "key") return json({ error: "scope must be 'key' or 'global'" }, 400);
+    const keyId = String(b.key_id || "");
+    if (!keyId) return json({ error: "key_id required" }, 400);
+    // The key must exist: at least one resource registered with this key_id.
+    const resRows = await db.prepare("SELECT id, config FROM resources").all();
+    const keyResources = [];
+    for (const rr of (resRows.results || [])) {
+      try { if (JSON.parse(rr.config || "{}").key_id === keyId) keyResources.push(rr.id); } catch {}
+    }
+    if (!keyResources.length) return json({ error: `unknown key_id ${keyId} (no resource registered with this key)` }, 400);
+    const cur = await db.prepare("SELECT * FROM key_config WHERE key_id=?").bind(keyId).first();
+    const row = cur || { enabled: 1, allowlist: null, cost_cap: null, failover_order: 100 };
+    let from, to, field = b.field;
+    if (field === "enabled") {
+      if (b.value !== 0 && b.value !== 1 && b.value !== true && b.value !== false)
+        return json({ error: "enabled must be 0/1" }, 400);
+      from = String(row.enabled); to = String(b.value === 1 || b.value === true ? 1 : 0);
+      row.enabled = Number(to);
+    } else if (field === "allowlist") {
+      if (!Array.isArray(b.value)) return json({ error: "allowlist must be an array of model ids (or null to clear — send value:null)" }, 400);
+      // Every allowlist entry must be a listed model for THIS key.
+      const mcRows = await db.prepare("SELECT model FROM model_capabilities").all();
+      const listed = new Set((mcRows.results || []).map((m) => m.model));
+      const bad = b.value.filter((m) => !listed.has(m));
+      if (bad.length) return json({ error: `allowlist models not listed for any resource: ${bad.join(", ")}` }, 400);
+      from = row.allowlist || "null"; to = JSON.stringify(b.value);
+      row.allowlist = to;
+    } else if (field === "allowlist_clear") {
+      from = row.allowlist || "null"; to = "null";
+      row.allowlist = null;
+      field = "allowlist";
+    } else if (field === "cost_cap") {
+      if (b.value !== null && !(typeof b.value === "number" && b.value >= 0))
+        return json({ error: "cost_cap must be a number >= 0 or null" }, 400);
+      from = row.cost_cap == null ? "null" : String(row.cost_cap);
+      to = b.value == null ? "null" : String(b.value);
+      row.cost_cap = b.value;
+    } else if (field === "failover_order") {
+      if (!(Number.isInteger(b.value) && b.value >= 0))
+        return json({ error: "failover_order must be an integer >= 0" }, 400);
+      from = String(row.failover_order); to = String(b.value);
+      row.failover_order = b.value;
+    } else {
+      return json({ error: "field must be enabled, allowlist, allowlist_clear, cost_cap, or failover_order" }, 400);
+    }
+    await db.prepare("INSERT OR REPLACE INTO key_config (key_id,enabled,allowlist,cost_cap,failover_order,updated_at,updated_by) VALUES (?,?,?,?,?,?,?)")
+      .bind(keyId, row.enabled, row.allowlist, row.cost_cap, row.failover_order, now(), actor).run();
+    const ins = await db.prepare("INSERT INTO config_log (actor,scope,key_id,field,from_value,to_value,reason) VALUES (?,?,?,?,?,?,?)")
+      .bind(actor, "key", keyId, field, from, to, reason).run();
+    await db.prepare("INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)")
+      .bind("config:key:" + keyId, `${field}=${from}`, `${field}=${to}`, "config-change",
+        `key ${keyId} ${field} ${from} -> ${to} by ${actor}${reason ? " (" + reason + ")" : ""}`).run();
+    return json({ changed: true, scope: "key", key_id: keyId, field, from, to,
+      log_id: (ins.meta && ins.meta.last_row_id) || null, at: now() });
   }
 
   // ---- VOTING (protocol amendments A1/A2/A3, Zackary approved 2026-10-07) ----
@@ -2844,6 +3288,15 @@ async function handle(request, env) {
     checks.push({ check: "all_gates_recorded", pass: gates.every((x) => present.includes(x)), missing: gates.filter((x) => !present.includes(x)) });
     checks.push({ check: "cost_within_policy", pass: (rcpt.cost || 0) <= (job ? JSON.parse(job.spec || "{}").max_cost ?? 0 : 0), cost: rcpt.cost });
     checks.push({ check: "policy_version_recorded", pass: !!rcpt.policy_version, policy_version: rcpt.policy_version || null });
+    // M2: a delegated completion must carry the verified worker envelope
+    // (env/seal/sig/payload_hash stored at completion); governor-minted
+    // receipts carry none. A seal that is present but malformed fails.
+    const envCols = [rcpt.env, rcpt.seal, rcpt.sig, rcpt.payload_hash];
+    const envPresent = envCols.filter((c) => c != null).length;
+    const sealOk = rcpt.seal == null || /^[0-9a-f]{64}$/.test(rcpt.seal);
+    const payloadHashOk = rcpt.payload_hash == null || /^[0-9a-f]{64}$/.test(rcpt.payload_hash);
+    const sigOk = rcpt.sig == null || /^HS256:[0-9a-f]{64}$/.test(rcpt.sig);
+    checks.push({ check: "envelope_bound", pass: isDelegatedCompletion ? (envPresent === 4 && sealOk && payloadHashOk && sigOk) : (envPresent === 0 || (envPresent === 4 && sealOk && payloadHashOk && sigOk)), env_present: envPresent, env: rcpt.env || null });
     let fbOk = true;
     try { fbOk = rcpt.fallback_chain == null || Array.isArray(JSON.parse(rcpt.fallback_chain)); } catch { fbOk = false; }
     checks.push({ check: "fallback_chain_structured", pass: fbOk });

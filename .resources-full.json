@@ -1,0 +1,280 @@
+[
+ {
+  "results": [
+   {
+    "id": "ctcc-heartbeat",
+    "provider_id": "cloudflare",
+    "kind": "worker",
+    "state": "QUARANTINED",
+    "evidence_state": "PARKED",
+    "config": "{\"adapter\":\"http-post\",\"url\":\"https://ctcc-router.cutecity.workers.dev/ingest\",\"method\":\"POST\",\"timeoutMs\":15000,\"expect_status\":[200,202],\"trust\":\"self\"}"
+   },
+   {
+    "id": "cutecity-health",
+    "provider_id": "cloudflare",
+    "kind": "http-endpoint",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://cutecity.cc/api/health\",\"method\":\"GET\",\"timeoutMs\":15000,\"expect_status\":[200],\"verify_json_path\":\"database\",\"verify_equals\":true,\"trust\":\"self\"}"
+   },
+   {
+    "id": "dead-dogfood",
+    "provider_id": "nowhere",
+    "kind": "candidate",
+    "state": "UNKNOWN",
+    "evidence_state": "PARKED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://127.0.0.1:9/nope\",\"timeoutMs\":8000,\"expect_status\":[200],\"trust\":\"untrusted\"}"
+   },
+   {
+    "id": "dead-test",
+    "provider_id": "cloudflare",
+    "kind": "http-endpoint",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://cutecity.workers.dev/this-does-not-exist-xyz\",\"timeoutMs\":8000,\"expect_status\":[200],\"trust\":\"self\"}"
+   },
+   {
+    "id": "exchange-self",
+    "provider_id": "cloudflare",
+    "kind": "worker",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"capabilities\":[\"orchestrate\",\"govern\",\"score\"]}"
+   },
+   {
+    "id": "fake-deterministic",
+    "provider_id": "test",
+    "kind": "compute",
+    "state": "QUARANTINED",
+    "evidence_state": "QUOTA",
+    "config": "{\"adapter\":\"claimed\",\"trust\":\"none\",\"workload\":\"deterministic\"}"
+   },
+   {
+    "id": "httpbin-json-fingerprint",
+    "provider_id": "httpbin-org",
+    "kind": "http-endpoint",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://httpbin.org/json\",\"timeoutMs\":15000,\"expect_status\":[200],\"verify_json_path\":\"slideshow.title\",\"verify_equals\":\"Sample Slide Show\",\"trust\":\"untrusted\"}"
+   },
+   {
+    "id": "lane-kilo",
+    "provider_id": "ai-lanes",
+    "kind": "ai-lane",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"baseUrl\":\"https://api.kilo.ai/api/gateway\",\"model\":\"kilo-auto/free\",\"rpmLimit\":10,\"timeoutMs\":20000,\"trust\":\"untrusted\",\"fragmentsOnly\":true}"
+   },
+   {
+    "id": "lane-llm7",
+    "provider_id": "ai-lanes",
+    "kind": "ai-lane",
+    "state": "THROTTLED",
+    "evidence_state": "AVAILABLE",
+    "config": "{\"baseUrl\":\"https://api.llm7.io/v1\",\"model\":\"default\",\"rpmLimit\":2,\"timeoutMs\":60000,\"trust\":\"untrusted\",\"fragmentsOnly\":true}"
+   },
+   {
+    "id": "lane-ovh",
+    "provider_id": "ai-lanes",
+    "kind": "ai-lane",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"baseUrl\":\"https://oai.endpoints.kepler.ai.cloud.ovh.net/v1\",\"model\":\"Qwen3.5-9B\",\"rpmLimit\":2,\"timeoutMs\":20000,\"trust\":\"untrusted\",\"fragmentsOnly\":true}"
+   },
+   {
+    "id": "lane-pollinations",
+    "provider_id": "ai-lanes",
+    "kind": "ai-lane",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"baseUrl\":\"https://text.pollinations.ai/openai\",\"model\":\"openai\",\"rpmLimit\":30,\"timeoutMs\":20000,\"trust\":\"untrusted\",\"fragmentsOnly\":true}"
+   },
+   {
+    "id": "lanef-admin404",
+    "provider_id": "lanef-audit",
+    "kind": "http-endpoint",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://cutecity.cc/api/admin\",\"method\":\"GET\",\"timeoutMs\":15000,\"expect_status\":[404]}"
+   },
+   {
+    "id": "lanef-feed",
+    "provider_id": "lanef-audit",
+    "kind": "http-endpoint",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://cutecity.cc/api/feed\",\"method\":\"GET\",\"timeoutMs\":15000,\"expect_status\":[200]}"
+   },
+   {
+    "id": "lanef-root",
+    "provider_id": "lanef-audit",
+    "kind": "http-endpoint",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://cutecity.cc/\",\"method\":\"GET\",\"timeoutMs\":15000,\"expect_status\":[200]}"
+   },
+   {
+    "id": "lanef-slasher",
+    "provider_id": "lanef-audit",
+    "kind": "http-endpoint",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://saltspringslasher.cutecity.cc/\",\"method\":\"GET\",\"timeoutMs\":15000,\"expect_status\":[200]}"
+   },
+   {
+    "id": "nim-nvidia",
+    "provider_id": "nvidia",
+    "kind": "inference",
+    "state": "AVAILABLE",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"claimed\",\"baseUrl\":\"https://integrate.api.nvidia.com/v1\",\"trust\":\"keyed\",\"via\":\"vm-nim-claimant\",\"default_model\":\"openai/gpt-oss-20b\",\"model\":\"openai/gpt-oss-20b\",\"credential_ref\":\"vault:custom.nvidia-nim\"}"
+   },
+   {
+    "id": "redteam-500",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"http-post\",\"url\":\"https://httpstat.us/500\",\"expect_status\":[200],\"timeoutMs\":15000}"
+   },
+   {
+    "id": "redteam-500b",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"http-post\",\"url\":\"https://httpbin.org/status/500\",\"expect_status\":[200],\"timeoutMs\":15000}"
+   },
+   {
+    "id": "redteam-contra",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "AVAILABLE",
+    "evidence_state": "ACCESSIBLE",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://lucidota-exchange.cutecity.workers.dev/v1/health\",\"expect_status\":[200],\"timeoutMs\":15000}"
+   },
+   {
+    "id": "redteam-fixcheck",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "AVAILABLE",
+    "evidence_state": "ACCESSIBLE",
+    "config": "{\"adapter\":\"http-post\",\"url\":\"https://httpbin.org/status/200\",\"expect_status\":[200],\"timeoutMs\":10000}"
+   },
+   {
+    "id": "redteam-ghost-1",
+    "provider_id": "redteam-ghost",
+    "kind": "candidate",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"ai-lane\",\"baseUrl\":\"https://nonexistent.invalid\",\"model\":\"x\",\"timeoutMs\":10000}"
+   },
+   {
+    "id": "redteam-ghost-2",
+    "provider_id": "redteam-ghost",
+    "kind": "candidate",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"ai-lane\",\"baseUrl\":\"https://nonexistent.invalid\",\"model\":\"x\",\"timeoutMs\":10000}"
+   },
+   {
+    "id": "redteam-malformed",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"ai-lane\",\"baseUrl\":\"https://example.com\",\"model\":\"x\",\"timeoutMs\":15000}"
+   },
+   {
+    "id": "redteam-nettest",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"ai-lane\",\"baseUrl\":\"https://1.1.1.1:81\",\"model\":\"x\",\"timeoutMs\":8000}"
+   },
+   {
+    "id": "redteam-privip",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "UNKNOWN",
+    "evidence_state": "PARKED",
+    "config": "{\"adapter\":\"http-post\",\"url\":\"http://10.0.0.1/\",\"expect_status\":[200],\"timeoutMs\":8000}"
+   },
+   {
+    "id": "redteam-throttle",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "THROTTLED",
+    "evidence_state": "DISCOVERED",
+    "config": "{}"
+   },
+   {
+    "id": "redteam-timeout",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "UNKNOWN",
+    "evidence_state": "PARKED",
+    "config": "{\"adapter\":\"ai-lane\",\"baseUrl\":\"https://10.255.255.1\",\"model\":\"x\",\"timeoutMs\":3000}"
+   },
+   {
+    "id": "redteam-timeout2",
+    "provider_id": "redteam",
+    "kind": "candidate",
+    "state": "QUARANTINED",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"http-post\",\"url\":\"https://httpbin.org/delay/10\",\"expect_status\":[200],\"timeoutMs\":3000}"
+   },
+   {
+    "id": "res_localmodels",
+    "provider_id": "local-models",
+    "kind": "inference",
+    "state": "UNKNOWN",
+    "evidence_state": "DISCOVERED",
+    "config": "{\"adapter\":\"claimed\",\"credential_ref\":\"vault:local-models\",\"trust\":\"self\",\"notes\":\"local inference on Zackary hardware; Worker never executes, delegation to local-trust claimant only\"}"
+   },
+   {
+    "id": "res_localswarm",
+    "provider_id": "local-swarm",
+    "kind": "candidate",
+    "state": "DEGRADED",
+    "evidence_state": "FREE",
+    "config": "{\"adapter\":\"claimed\"}"
+   },
+   {
+    "id": "res_scraper",
+    "provider_id": "krampus-express",
+    "kind": "scraper",
+    "state": "UNKNOWN",
+    "evidence_state": "DISCOVERED",
+    "config": "{\"adapter\":\"claimed\",\"credential_ref\":\"vault:krampus\",\"trust\":\"self\",\"notes\":\"deterministic scraping, provenance-first\"}"
+   },
+   {
+    "id": "tricycles-page",
+    "provider_id": "cloudflare",
+    "kind": "http-endpoint",
+    "state": "AVAILABLE",
+    "evidence_state": "ACCESSIBLE",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://tricycles.cutecity.workers.dev/\",\"timeoutMs\":10000,\"expect_status\":[401],\"trust\":\"self\"}"
+   }
+  ],
+  "success": true,
+  "meta": {
+   "served_by": "v3-prod",
+   "served_by_region": "WNAM",
+   "served_by_colo": "SEA",
+   "served_by_primary": true,
+   "timings": {
+    "sql_duration_ms": 0.2374
+   },
+   "duration": 0.2374,
+   "changes": 0,
+   "last_row_id": 50855,
+   "changed_db": false,
+   "size_after": 19939328,
+   "rows_read": 32,
+   "rows_written": 0,
+   "total_attempts": 1
+  }
+ }
+]

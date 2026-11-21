@@ -1,0 +1,50 @@
+[
+ {
+  "results": [
+   {
+    "id": "ctcc-heartbeat",
+    "provider_id": "cloudflare",
+    "evidence_state": "PARKED",
+    "config": "{\"adapter\":\"http-post\",\"url\":\"https://ctcc-router.cutecity.workers.dev/ingest\",\"method\":\"POST\",\"timeoutMs\":15000,\"expect_status\":[200,202],\"trust\":\"self\"}"
+   },
+   {
+    "id": "cutecity-health",
+    "provider_id": "cloudflare",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://cutecity.cc/api/health\",\"method\":\"GET\",\"timeoutMs\":15000,\"expect_status\":[200],\"verify_json_path\":\"database\",\"verify_equals\":true,\"trust\":\"self\"}"
+   },
+   {
+    "id": "dead-dogfood",
+    "provider_id": "nowhere",
+    "evidence_state": "PARKED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://127.0.0.1:9/nope\",\"timeoutMs\":8000,\"expect_status\":[200],\"trust\":\"untrusted\"}"
+   },
+   {
+    "id": "dead-test",
+    "provider_id": "cloudflare",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://cutecity.workers.dev/this-does-not-exist-xyz\",\"timeoutMs\":8000,\"expect_status\":[200],\"trust\":\"self\"}"
+   },
+   {
+    "id": "exchange-self",
+    "provider_id": "cloudflare",
+    "evidence_state": "VERIFIED",
+    "config": "{\"capabilities\":[\"orchestrate\",\"govern\",\"score\"]}"
+   },
+   {
+    "id": "fake-deterministic",
+    "provider_id": "test",
+    "evidence_state": "QUOTA",
+    "config": "{\"adapter\":\"claimed\",\"trust\":\"none\",\"workload\":\"deterministic\"}"
+   },
+   {
+    "id": "httpbin-json-fingerprint",
+    "provider_id": "httpbin-org",
+    "evidence_state": "VERIFIED",
+    "config": "{\"adapter\":\"http-get\",\"url\":\"https://httpbin.org/json\",\"timeoutMs\":15000,\"expect_status\":[200],\"verify_json_path\":\"slideshow.title\",\"verify_equals\":\"Sample Slide Show\",\"trust\":\"untrusted\"}"
+   },
+   {
+    "id": "lane-kilo",
+    "provider_id": "ai-lanes",
+    "evidence_state": "UNKNOWN",
+    "config": "{\"baseUrl\"

@@ -1,0 +1,219 @@
+{
+ "started_at": "2026-11-21T01:57:57Z",
+ "version": "0.7.3",
+ "steps": [
+  {
+   "step": "health",
+   "expected": "0.7.3 ok",
+   "actual": "0.7.3 ok=True resources=42 capabilities=656 keys=11",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "capabilities-list",
+   "expected": "656 total",
+   "actual": "total=656 usable=124 proven=6",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "config-list",
+   "expected": "11 keys, allow_paid=0",
+   "actual": "keys=11 allow_paid=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "zen-preflight",
+   "expected": "hy4-flash-free answers in 10s",
+   "actual": "DOWN (skip zen gauntlet + proof)",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-groq",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'}",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-cerebras",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwpre2erb5wb9i state=done receipt=rcpt_mwpreehk3ixwin result=ok model_match=1 evidence=VERIFIED claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-mistral",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwpresw5b848m4 state=done receipt=rcpt_mwprf1jus8ptk8 result=ok model_match=1 evidence=VERIFIED claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-cohere",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwprfbbfc19dts state=done receipt=rcpt_mwprfkap4xcwtl result=ok model_match=1 evidence=VERIFIED claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-openrouter",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwprfwjly8qpdd state=done receipt=rcpt_mwprgdv5rsn758 result=ok model_match=1 evidence=FREE claimant_rc=0 | claimant out: nie-5.5-flash-preview:free\", \"state\": \"done\", \"receipt_id\": \"rcpt_mwprgdv5rsn758\", \"taxonomy\": \"ok\", \"idempotent\": false, \"http\": 200, \"error\": null}\n{\"claim_transport_retry\": \"transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response\"}\n{\"drained\": 1, \"cap\": 3, \"idle\": false, \"resource\": \"openrouter\", \"provider\": \"openrouter\", \"worker\": \"nim-claimant-01\"} err: ",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-cloudflare-ai",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwprgrtyrbxivk state=done receipt=rcpt_mwprgza4blys0e result=ok model_match=1 evidence=VERIFIED claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-ai-router",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'}",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "proof-nim-nvidia",
+   "expected": "google/gemma-4-31b-it executes, model_match=1",
+   "actual": "job job_proof073-nim-nvidia-inference-1 state=done receipt=rcpt_mwprhy0kspaf2v result=ok requested=google/gemma-4-31b-it actual=google/gemma-4-31b-it model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-groq",
+   "expected": "qwen/qwen3.8-27b executes, model_match=1",
+   "actual": "job job_proof073-groq-inference-1 state=done receipt=rcpt_mwpribxllr0wrv result=ok requested=qwen/qwen3.8-27b actual=qwen/qwen3.8-27b model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-cerebras",
+   "expected": "qwen-3.8-27b executes, model_match=1",
+   "actual": "job job_proof073-cerebras-inference-1 state=done receipt=rcpt_mwprimny7oddj0 result=ok requested=qwen-3.8-27b actual=qwen-3.8-27b model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-mistral",
+   "expected": "ministral-14b-latest executes, model_match=1",
+   "actual": "job job_proof073-mistral-inference-1 state=done receipt=rcpt_mwprj4w120czua result=ok requested=ministral-14b-latest actual=ministral-14b-latest model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-cohere",
+   "expected": "command-r7b-12-2024 executes, model_match=1",
+   "actual": "job job_proof073-cohere-inference-1 state=done receipt=rcpt_mwprjkukzta9ma result=ok requested=command-r7b-12-2024 actual=command-r7b-12-2024 model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-openrouter",
+   "expected": "skipped (resource not usable)",
+   "actual": "skipped",
+   "ok": false,
+   "detail": "evidence_state=FREE; pinned job would refuse at EVIDENCE"
+  },
+  {
+   "step": "proof-cloudflare-ai",
+   "expected": "@cf/google/gemma-4-26b-a4b-it executes, model_match=1",
+   "actual": "job job_proof073-cloudflare-ai-inference-1 state=done receipt=rcpt_mwprk7uxien87u result=ok requested=@cf/google/gemma-4-26b-a4b-it actual=@cf/google/gemma-4-26b-a4b-it model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-emb-nim-nvidia",
+   "expected": "nvidia/nemotron-3-embed-1b embeds, model_match=1",
+   "actual": "job job_proof073-nim-nvidia-embedding-1 state=done receipt=rcpt_mwprkk0g2p306c result=ok requested=nvidia/nemotron-3-embed-1b actual=nvidia/nemotron-3-embed-1b model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-emb-cloudflare-ai",
+   "expected": "@cf/baai/bge-base-en-v1.5 embeds, model_match=1",
+   "actual": "job job_proof073-cloudflare-ai-embedding-1 state=done receipt=rcpt_mwprl1c0xf0wuz result=ok requested=@cf/baai/bge-base-en-v1.5 actual=@cf/baai/bge-base-en-v1.5 model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "refuse-nonexistent-model",
+   "expected": "refused at MODEL",
+   "actual": "state=deferred receipt=rcpt_mwprlf90ud9xc7 MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)'), ('cerebras', 'model no-such-model-xyz not listed for cerebras'), ('cloudflare-ai', 'model no-such-model-xyz not listed for cloudflare-ai'), ('cohere', 'model no-such-model-xyz not listed for cohere'), ('groq', 'model no-such-model-xyz not listed for groq'), ('lane-pollinations', 'resource serves openai, not no-such-model-xyz'), ('mistral', 'model no-such-model-xyz not listed for mistral'), ('nim-nvidia', 'model no-such-model-xyz not listed for nim-nvidia')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "refuse-mistral-paid",
+   "expected": "refused at COST (allow_paid=0)",
+   "actual": "state=deferred receipt=None COST-rejections=[('mistral', 'model codestral-2508 is paid and global allow_paid=0 (spend decision required)')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "refuse-deepseek-unproven",
+   "expected": "refused at EVIDENCE (DISCOVERED, paid-only)",
+   "actual": "state=deferred receipt=None EVIDENCE-rejections=[('deepseek', 'evidence_state=DISCOVERED \u2014 not verified usable capacity')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "refuse-friendli-unproven",
+   "expected": "refused at EVIDENCE (DISCOVERED, unfunded rows)",
+   "actual": "state=deferred receipt=rcpt_mwprm0pa291eso EVIDENCE-rejections=[('friendli', 'evidence_state=DISCOVERED \u2014 not verified usable capacity')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "refuse-pinned-failover-pool",
+   "expected": "refused at MODEL (failover pool)",
+   "actual": "state=deferred receipt=None MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-cerebras",
+   "expected": "evidence VERIFIED",
+   "actual": "already VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-mistral",
+   "expected": "evidence VERIFIED",
+   "actual": "already VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-cohere",
+   "expected": "evidence VERIFIED",
+   "actual": "already VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-cloudflare-ai",
+   "expected": "evidence VERIFIED",
+   "actual": "already VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "final-usable",
+   "expected": "usable>0",
+   "actual": "usable=124",
+   "ok": true,
+   "detail": null
+  }
+ ],
+ "finished_at": "2026-11-21T02:04:52Z",
+ "passed": 26,
+ "failed": 4
+}

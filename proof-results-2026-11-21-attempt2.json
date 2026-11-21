@@ -1,0 +1,226 @@
+{
+ "started_at": "2026-11-21T01:00:35Z",
+ "version": "0.7.1",
+ "steps": [
+  {
+   "step": "health",
+   "expected": "0.7.1 ok",
+   "actual": "0.7.1 ok=True resources=42 capabilities=656 keys=11",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "capabilities-list",
+   "expected": "656 total",
+   "actual": "total=656 usable=47 proven=2",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "config-list",
+   "expected": "11 keys, allow_paid=0",
+   "actual": "keys=11 allow_paid=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "zen-preflight",
+   "expected": "hy4-flash-free answers in 10s",
+   "actual": "DOWN (skip zen gauntlet + proof)",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-groq",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwppcg97xfand8 state=done receipt=rcpt_mwppcrm94cubxy result=ok model_match=1 evidence=AVAILABLE claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-cerebras",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwppdqxrrmsuoo state=done receipt=rcpt_mwppdz5yfwmxap result=ok model_match=1 evidence=VERIFIED claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-mistral",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwppetiyuq80ou state=done receipt=rcpt_mwppeyzuumwke2 result=ok model_match=1 evidence=AVAILABLE claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-cohere",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwppfeb5veg3lm state=done receipt=rcpt_mwppfji91dsiv2 result=ok model_match=1 evidence=AVAILABLE claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-openrouter",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwppgu61tztbob state=None receipt=None result=None model_match=None evidence=DISCOVERED claimant_rc=0 | claimant out: eturned error', 'code': 429, 'metadata': {'raw': 'google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own provider key to use your own limits: https://openrouter.ai/workspaces/default/byok', 'provider_name': 'Google AI Studio', 'i\"}\n{\"drained\": 1, \"cap\": 3, \"idle\": false, \"resource\": \"openrouter\", \"provider\": \"openrouter\", \"worker\": \"nim-claimant-01\"} err: ",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-cloudflare-ai",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwppj8u15dphbz state=done receipt=rcpt_mwppjoq0ea42mf result=ok model_match=1 evidence=AVAILABLE claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "gauntlet-ai-router",
+   "expected": "job done, evidence AVAILABLE",
+   "actual": "job job_mwppk8m1clnahv state=done receipt=rcpt_mwppkf927171qo result=ok model_match=0 evidence=AVAILABLE claimant_rc=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-nim-nvidia",
+   "expected": "google/gemma-4-31b-it executes, model_match=1",
+   "actual": "job job_proof070-nim-nvidia-inference-1 state=None receipt=None result=None requested=None actual=None model_match=None | claimant out: _mwppl0hvrahawe\", \"outcome\": \"SUCCEEDED\", \"model_requested\": \"google/gemma-4-31b-it\", \"model_used\": \"google/gemma-4-31b-it\", \"model_actual\": \"google/gemma-4-31b-it\", \"state\": \"done\", \"receipt_id\": \"rcpt_mwpplaqm5v2z7s\", \"taxonomy\": \"ok\", \"idempotent\": false, \"http\": 200, \"error\": null}\n{\"drained\": 1, \"cap\": 3, \"idle\": false, \"resource\": \"nim-nvidia\", \"provider\": \"nim\", \"worker\": \"nim-claimant-01\"} err: ",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "proof-groq",
+   "expected": "qwen/qwen3.8-27b executes, model_match=1",
+   "actual": "job job_proof070-groq-inference-1 state=done receipt=rcpt_mwppmrfnopdp31 result=ok requested=qwen/qwen3.8-27b actual=qwen/qwen3.8-27b model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-cerebras",
+   "expected": "qwen-3.8-27b executes, model_match=1",
+   "actual": "job job_proof070-cerebras-inference-1 state=done receipt=rcpt_mwppnzbli5atne result=ok requested=qwen-3.8-27b actual=qwen-3.8-27b model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-mistral",
+   "expected": "ministral-14b-latest executes, model_match=1",
+   "actual": "job job_proof070-mistral-inference-1 state=done receipt=rcpt_mwpppbhr5o8j9r result=ok requested=ministral-14b-latest actual=ministral-14b-latest model_match=1",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "proof-cohere",
+   "expected": "command-r7b-12-2024 executes, model_match=1",
+   "actual": "job job_proof070-cohere-inference-1 state=deferred receipt=rcpt_mwppqhdl7ym932 result=deferred requested=None actual=None model_match=None | claimant out: {\"drained\": 0, \"cap\": 3, \"idle\": true, \"resource\": \"cohere\", \"provider\": \"cohere\", \"worker\": \"nim-claimant-01\"} err: ",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "proof-openrouter",
+   "expected": "skipped (gauntlet failed)",
+   "actual": "skipped",
+   "ok": false,
+   "detail": "gauntlet did not promote; pinned job would refuse at EVIDENCE"
+  },
+  {
+   "step": "proof-cloudflare-ai",
+   "expected": "@cf/google/gemma-4-26b-a4b-it executes, model_match=1",
+   "actual": "job job_proof070-cloudflare-ai-inference-1 state=None receipt=None result=None requested=None actual=None model_match=None | claimant out: {\"drained\": 0, \"cap\": 3, \"idle\": true, \"resource\": \"cloudflare-ai\", \"provider\": \"cloudflare-ai\", \"worker\": \"nim-claimant-01\"} err: ",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "proof-emb-nim-nvidia",
+   "expected": "nvidia/embed-qa-4 embeds, model_match=1",
+   "actual": "job job_proof070-nim-nvidia-embedding-1 (deduplicated re-run) state=deferred receipt=rcpt_mwpptj7agv7lol model_match=None",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "proof-emb-cloudflare-ai",
+   "expected": "@cf/baai/bge-base-en-v1.5 embeds, model_match=1",
+   "actual": "job job_proof070-cloudflare-ai-embedding-1 state=None receipt=None result=None requested=None actual=None model_match=None | claimant out: 5\", \"model_used\": \"@cf/baai/bge-base-en-v1.5\", \"model_actual\": null, \"state\": \"deferred\", \"receipt_id\": \"rcpt_mwppuob515bvkh\", \"taxonomy\": \"RETRYABLE_FAILURE\", \"idempotent\": false, \"http\": 200, \"error\": \"IncompleteRead: IncompleteRead(9561 bytes read, 4902 more expected)\"}\n{\"drained\": 1, \"cap\": 3, \"idle\": false, \"resource\": \"cloudflare-ai\", \"provider\": \"cloudflare-ai\", \"worker\": \"nim-claimant-01\"} err: ",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "refuse-nonexistent-model",
+   "expected": "refused at MODEL",
+   "actual": "state=deferred receipt=rcpt_mwppw5q0vstmmp MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)'), ('cerebras', 'model no-such-model-xyz not listed for cerebras'), ('cloudflare-ai', 'model no-such-model-xyz not listed for cloudflare-ai'), ('cohere', 'model no-such-model-xyz not listed for cohere'), ('groq', 'model no-such-model-xyz not listed for groq'), ('lane-pollinations', 'resource serves openai, not no-such-model-xyz'), ('mistral', 'model no-such-model-xyz not listed for mistral'), ('nim-nvidia', 'model no-such-model-xyz not listed for nim-nvidia')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "refuse-mistral-paid",
+   "expected": "refused at COST (allow_paid=0)",
+   "actual": "state=deferred receipt=None COST-rejections=[] executions=0 claims=0 | rejected=[]",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "refuse-deepseek-unproven",
+   "expected": "refused at EVIDENCE (DISCOVERED, paid-only)",
+   "actual": "state=deferred receipt=rcpt_mwppwu2ng3id3e EVIDENCE-rejections=[('deepseek', 'evidence_state=DISCOVERED \u2014 not verified usable capacity')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "refuse-friendli-unproven",
+   "expected": "refused at EVIDENCE (DISCOVERED, unfunded rows)",
+   "actual": "state=deferred receipt=None EVIDENCE-rejections=[] executions=0 claims=0 | rejected=[]",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "refuse-pinned-failover-pool",
+   "expected": "refused at MODEL (failover pool)",
+   "actual": "state=deferred receipt=rcpt_mwppxjb8gzk8e6 MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)')] executions=0 claims=0",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-groq",
+   "expected": "evidence VERIFIED",
+   "actual": "job job_mwppxz0zpr1lw8 state=done receipt=rcpt_mwppy1vo9ve7cu result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-cerebras",
+   "expected": "evidence VERIFIED",
+   "actual": "job job_mwppzuuhx172pd state=done receipt=rcpt_mwpq03vqzsf217 result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-mistral",
+   "expected": "evidence VERIFIED",
+   "actual": "job job_mwpq097i2u8ovi state=done receipt=rcpt_mwpq0dc1iyxml5 result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-cohere",
+   "expected": "evidence VERIFIED",
+   "actual": "job job_mwpq13pxwa1v5d state=done receipt=rcpt_mwpq1b8snrwyn5 result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED",
+   "ok": true,
+   "detail": null
+  },
+  {
+   "step": "verify2-cloudflare-ai",
+   "expected": "evidence VERIFIED",
+   "actual": "job job_mwpq1jf6x25nv0 state=deferred receipt=rcpt_mwpq1jqecbpajo result=deferred model_match=None evidence=AVAILABLE claimant_rc=0 | claimant out: {\"drained\": 0, \"cap\": 3, \"idle\": true, \"resource\": \"cloudflare-ai\", \"provider\": \"cloudflare-ai\", \"worker\": \"nim-claimant-01\"} err:  | evidence=AVAILABLE",
+   "ok": false,
+   "detail": null
+  },
+  {
+   "step": "final-usable",
+   "expected": "usable>0",
+   "actual": "usable=None",
+   "ok": false,
+   "detail": null
+  }
+ ],
+ "finished_at": "2026-11-21T01:21:23Z",
+ "passed": 20,
+ "failed": 11
+}

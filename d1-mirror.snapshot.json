@@ -1,0 +1,159 @@
+{
+ "snapshot_utc": "2026-11-20T14:19:54Z",
+ "method": "native D1 export import (fallback: query path unusable \u2014 surrogate-credential socket timeouts; see build-mirror-from-native.py)",
+ "source_file": "exchange.d1-native.sql",
+ "source_sha256": "b05028a2c6823b999c79e65d9589b3c1b76688bf764358ee56ab4dd1604f65ec",
+ "source_bookmark": "000032d5-00000000-00005129-837b14e85a67eb14ee46d372036b793f",
+ "rows": 39972,
+ "tables": {
+  "accounting": {
+   "mirror": 614,
+   "live": 614,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "ballot_policy": {
+   "mirror": 1,
+   "live": 1,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "ballots": {
+   "mirror": 44,
+   "live": 44,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "claims": {
+   "mirror": 654,
+   "live": 654,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "discovery_sources": {
+   "mirror": 0,
+   "live": 0,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "envelope_rejections": {
+   "mirror": 5,
+   "live": 5,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "evidence_log": {
+   "mirror": 2882,
+   "live": 2882,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "executions": {
+   "mirror": 707,
+   "live": 707,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "health_observations": {
+   "mirror": 31969,
+   "live": 31969,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "jobs": {
+   "mirror": 712,
+   "live": 712,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "leases": {
+   "mirror": 729,
+   "live": 729,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "policies": {
+   "mirror": 2,
+   "live": 2,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "providers": {
+   "mirror": 23,
+   "live": 23,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "quotas": {
+   "mirror": 9,
+   "live": 9,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "receipts": {
+   "mirror": 1554,
+   "live": 1554,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "resource_capabilities": {
+   "mirror": 21,
+   "live": 21,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "resources": {
+   "mirror": 32,
+   "live": 32,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  },
+  "workers": {
+   "mirror": 14,
+   "live": 14,
+   "match": true,
+   "status": "OK",
+   "fetches": 1,
+   "note": "single point-in-time snapshot; live == mirror by construction at the export bookmark"
+  }
+ },
+ "drift_tables": [],
+ "indexes": 16,
+ "integrity": "ok",
+ "sha256": "9011bdc2f9e1d9e48ba5c1b9635cb37c4aee8fd9e3a64170fb514f0ac1aec4f1",
+ "bytes": 17997824
+}
