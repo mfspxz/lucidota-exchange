@@ -1,0 +1,2 @@
+{"completed": "job_mwpqyci7v1oxp9", "claim_id": "claim_mwpqydi6p04boc", "outcome": "SUCCEEDED", "model_requested": "gemini-2.0-flash", "model_used": "gemini-2.0-flash", "model_actual": "nvidia/nemotron-3.5-bolt-e4b", "state": "done", "receipt_id": "rcpt_mwpqyl342vl8lt", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "ai-router", "provider": "ai-router", "worker": "nim-claimant-01"}

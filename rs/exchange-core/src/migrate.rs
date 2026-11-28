@@ -9,6 +9,52 @@ use crate::db::{Db, DbError, RowExt, Val};
 use crate::util::{minutes_ago, now_iso};
 use serde_json::{json, Value};
 
+/// A3 (2026-11-22, D1 burn): SCHEMA_EPOCH is the contract between
+/// ensure_migrated() and migrate(). Bump it in the SAME commit as ANY
+/// schema change inside migrate(). The JS production worker
+/// (~/workspace/exchange/worker.js) shares this epoch string and the
+/// exchange_config marker keys — during the flip both implementations
+/// run against one D1 and must agree, so keep all three in sync.
+pub const SCHEMA_EPOCH: &str = "v0.7.3-a3-1";
+
+static SCHEMA_OK: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// ensure_migrated: the burn-safe replacement for calling migrate()
+/// on every request. migrate() costs ~84 statements and (before the
+/// marker fix below) ended in a 3,156-row scan of the append-only
+/// evidence_log. Claimant polling is sparse (~540 req/h), so worker
+/// isolates churn and a per-request or per-cold-isolate migrate is
+/// the dominant D1 read burn (D1-BURN-FIX-A3.md). Gate on ONE
+/// primary-key lookup; run the full migrate only when the stored
+/// epoch is stale or unreadable (a pre-v0.7 database has no
+/// exchange_config table — the query errors and migrate creates it,
+/// exactly as an unconditional migrate would). SCHEMA_OK is set only
+/// on success, so a failed migrate is retried by the next request —
+/// the JS __migrating reset semantics.
+pub async fn ensure_migrated(db: &dyn Db) -> Result<(), DbError> {
+    use std::sync::atomic::Ordering;
+    if SCHEMA_OK.load(Ordering::Relaxed) {
+        return Ok(());
+    }
+    let epoch = db
+        .query_one("SELECT value FROM exchange_config WHERE key='schema_epoch'", &[])
+        .await
+        .ok()
+        .flatten()
+        .map(|r| r.text_or("value", ""));
+    if epoch.as_deref() != Some(SCHEMA_EPOCH) {
+        migrate(db).await?;
+        db.exec(
+            "INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('schema_epoch',?,?)",
+            &[Val::from(SCHEMA_EPOCH), Val::from(now_iso())],
+        )
+        .await?;
+    }
+    SCHEMA_OK.store(true, Ordering::Relaxed);
+    Ok(())
+}
+
 async fn cols_of(db: &dyn Db, t: &str) -> Result<std::collections::HashSet<String>, DbError> {
     let rows = db.query_all(&format!("PRAGMA table_info({})", t), &[]).await?;
     Ok(rows.iter().map(|c| c.text_or("name", "")).collect())
@@ -199,11 +245,81 @@ pub async fn migrate(db: &dyn Db) -> Result<(), DbError> {
     db.exec("CREATE INDEX IF NOT EXISTS idx_leases_resource ON leases (resource_id)", &[]).await?;
     db.exec("CREATE INDEX IF NOT EXISTS idx_resources_provider ON resources (provider_id)", &[]).await?;
     db.exec("CREATE INDEX IF NOT EXISTS idx_leases_state_created ON leases (state, created_at)", &[]).await?;
-    let done = db
-        .query_one("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'", &[])
+    // v0.7.0: model_capabilities (one row per (resource, model) from the
+    // live /models enumeration), key_config (the knobs: per-key enable,
+    // allowlist, cost cap, failover order), config_log (append-only
+    // receipt of every knob change), exchange_config (global knobs;
+    // allow_paid=0 is the master kill-switch for paid execution,
+    // fail-closed default).
+    db.exec(
+        "CREATE TABLE IF NOT EXISTS model_capabilities (
+           resource_id TEXT NOT NULL, model TEXT NOT NULL, capability TEXT NOT NULL,
+           cost TEXT DEFAULT 'unknown', source TEXT, listed_at TEXT,
+           last_executed_at TEXT, last_error TEXT,
+           PRIMARY KEY (resource_id, model))",
+        &[],
+    )
+    .await?;
+    db.exec("CREATE INDEX IF NOT EXISTS idx_model_caps_model ON model_capabilities (model)", &[]).await?;
+    db.exec("CREATE INDEX IF NOT EXISTS idx_model_caps_capability ON model_capabilities (capability)", &[]).await?;
+    db.exec(
+        "CREATE TABLE IF NOT EXISTS key_config (
+           key_id TEXT PRIMARY KEY, enabled INTEGER DEFAULT 1, allowlist TEXT,
+           cost_cap REAL, failover_order INTEGER DEFAULT 100,
+           updated_at TEXT, updated_by TEXT)",
+        &[],
+    )
+    .await?;
+    db.exec(
+        "CREATE TABLE IF NOT EXISTS config_log (
+           id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT (datetime('now')),
+           actor TEXT, scope TEXT, key_id TEXT, field TEXT,
+           from_value TEXT, to_value TEXT, reason TEXT)",
+        &[],
+    )
+    .await?;
+    db.exec(
+        "CREATE TABLE IF NOT EXISTS exchange_config (
+           key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)",
+        &[],
+    )
+    .await?;
+    db.exec(
+        "INSERT OR IGNORE INTO exchange_config (key,value,updated_at) VALUES ('allow_paid','0',?)",
+        &[Val::from(now_iso())],
+    )
+    .await?;
+    // A3 (2026-11-22, D1 burn): evidence_log is append-only and had
+    // NO index; the backfill COUNT full-scanned it on every migrate().
+    db.exec(
+        "CREATE INDEX IF NOT EXISTS idx_evidence_log_trigger ON evidence_log (trigger)",
+        &[],
+    )
+    .await?;
+    // A3: the backfill check was an unindexed COUNT over evidence_log
+    // (3,156 rows at measurement, growing daily) paid by every
+    // migrate() to rediscover a one-time backfill that finished long
+    // ago. The marker lives in exchange_config (PK read, 1 row). The
+    // COUNT runs at most once more — on the first migrate after this
+    // lands — and writes the marker either way. Same keys as worker.js.
+    let bf_done = db
+        .query_one("SELECT value FROM exchange_config WHERE key='backfill_v03_done'", &[])
+        .await?
+        .map(|r| r.text_or("value", ""))
+        .unwrap_or_default()
+        == "1";
+    if !bf_done {
+        let done = db
+            .query_one("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'", &[])
+            .await?;
+        if done.map(|r| r.i64_or("c", 0)).unwrap_or(0) == 0 {
+            backfill_evidence(db).await?;
+        }
+        db.exec(
+            "INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('backfill_v03_done','1',?)",
+            &[Val::from(now_iso())],
+        )
         .await?;
-    if done.map(|r| r.i64_or("c", 0)).unwrap_or(0) == 0 {
-        backfill_evidence(db).await?;
     }
     Ok(())
 }

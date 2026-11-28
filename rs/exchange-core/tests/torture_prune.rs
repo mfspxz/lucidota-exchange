@@ -17,10 +17,17 @@ use std::collections::HashMap;
 
 const TEST_KEY_HEX: &str = "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a";
 
+static NONCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 fn mint_envelope(claim_id: &str) -> Value {
     let key = hex::decode(TEST_KEY_HEX).unwrap();
     let mut payload = serde_json::Map::new();
     payload.insert("kind".to_string(), Value::from("completion"));
+    // Unique seal per mint (same pattern as torture_seal.rs): without this,
+    // two mints in the same millisecond produce identical seals and the
+    // second is a false replay — timestamp-only uniqueness is wall-clock luck.
+    let n = NONCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    payload.insert("nonce".to_string(), Value::from(format!("p{}", n)));
     let map = pl::envelope::wrap_with(&key, "luci", claim_id, "established", payload, "GENESIS", &now_iso())
         .expect("mint envelope");
     Value::Object(map)

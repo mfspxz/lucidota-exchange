@@ -1,0 +1,4 @@
+{"claim_transport_retry": "transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response"}
+{"completed": "job_mwprfwjly8qpdd", "claim_id": "claim_mwprfyep7ckrw0", "outcome": "SUCCEEDED", "model_requested": "baidu/ernie-5.5-flash-preview:free", "model_used": "baidu/ernie-5.5-flash-preview:free", "model_actual": "baidu/ernie-5.5-flash-preview:free", "state": "done", "receipt_id": "rcpt_mwprgdv5rsn758", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"claim_transport_retry": "transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"}

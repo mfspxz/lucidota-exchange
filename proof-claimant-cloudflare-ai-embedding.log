@@ -1,0 +1,2 @@
+{"completed": "job_proof073-cloudflare-ai-embedding-1", "claim_id": "claim_mwprkwdifvjvry", "outcome": "SUCCEEDED", "model_requested": "@cf/baai/bge-base-en-v1.5", "model_used": "@cf/baai/bge-base-en-v1.5", "model_actual": "@cf/baai/bge-base-en-v1.5", "state": null, "receipt_id": null, "taxonomy": null, "idempotent": false, "http": 409, "error": "envelope replay rejected: this envelope was already submitted"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}

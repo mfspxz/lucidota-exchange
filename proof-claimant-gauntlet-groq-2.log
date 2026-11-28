@@ -1,0 +1,1 @@
+{"drained": 0, "cap": 3, "idle": true, "resource": "groq", "provider": "groq", "worker": "nim-claimant-01"}

@@ -1,0 +1,37 @@
+{
+ "annotations": {
+  "workers/triggered_by": "upload"
+ },
+ "bindings": [
+  {
+   "name": "CTCC_KV",
+   "namespace_id": "8738ec40b04742fb887ba16d2d7aabb2",
+   "type": "kv_namespace"
+  },
+  {
+   "name": "CTCC_WEBHOOK_SECRET",
+   "type": "secret_text"
+  },
+  {
+   "name": "GPS_INGEST_SECRET",
+   "type": "secret_text"
+  },
+  {
+   "database_id": "ccb25914-29b4-4b2d-96d7-52e899d074e1",
+   "id": "ccb25914-29b4-4b2d-96d7-52e899d074e1",
+   "name": "HEARTBEAT_DB",
+   "type": "d1"
+  },
+  {
+   "name": "HEARTBEAT_SECRET",
+   "type": "secret_text"
+  }
+ ],
+ "compatibility_date": "2026-10-01",
+ "compatibility_flags": [],
+ "logpush": false,
+ "placement": {},
+ "tags": [],
+ "tail_consumers": [],
+ "usage_model": "standard"
+}

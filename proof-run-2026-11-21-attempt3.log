@@ -1,0 +1,60 @@
+[PASS] health: 0.7.1 ok=True resources=42 capabilities=656 keys=11
+[PASS] capabilities-list: total=656 usable=124 proven=6
+[PASS] config-list: keys=11 allow_paid=0
+[PASS] zen-preflight: DOWN (skip zen gauntlet + proof)
+[FAIL] gauntlet-groq: job job_mwpq3n5wgjxjot state=deferred receipt=rcpt_mwpq4ef2p6h3hb result=deferred model_match=None evidence=VERIFIED claimant_rc=0 | claimant out:  "model_actual": null, "state": "deferred", "receipt_id": "rcpt_mwpq4ef2p6h3hb", "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "TimeoutError: timed out"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "groq", "provider": "groq", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "groq", "provider": "groq", "worker": "nim-claimant-01"} err: 
+[PASS] gauntlet-cerebras: job job_mwpq5ozmet01lq state=done receipt=rcpt_mwpq5syexrfrg6 result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[PASS] gauntlet-mistral: job job_mwpq650cpw6kon state=done receipt=rcpt_mwpq6jgj7s47j0 result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[PASS] gauntlet-cohere: job job_mwpq6mj0q2pbsb state=done receipt=rcpt_mwpq6qc9mdvliu result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[FAIL] gauntlet-openrouter: job job_mwpq71tc7wkivd state=deferred receipt=rcpt_mwpq7anp0vkcc6 result=deferred model_match=None evidence=DISCOVERED claimant_rc=0 | claimant out: e retry shortly, or add your own provider key to use your own limits: https://openrouter.ai/workspaces/default/byok', 'provider_name': 'Google AI Studio', 'i"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"} err: 
+[PASS] gauntlet-cloudflare-ai: job job_mwpq840e3gos14 state=done receipt=rcpt_mwpq87xjrozxdj result=ok model_match=1 evidence=AVAILABLE claimant_rc=0
+[PASS] gauntlet-ai-router: job job_mwpq8gjiaojdiy state=done receipt=rcpt_mwpq8mcb7hoi3m result=ok model_match=0 evidence=AVAILABLE claimant_rc=0
+[PASS] proof-nim-nvidia: job job_proof070-nim-nvidia-inference-1 (deduplicated re-run) state=done receipt=rcpt_mwpplaqm5v2z7s model_match=1
+[FAIL] proof-groq: skipped — gauntlet did not promote; pinned job would refuse at EVIDENCE
+[PASS] proof-cerebras: job job_proof070-cerebras-inference-1 (deduplicated re-run) state=done receipt=rcpt_mwppnzbli5atne model_match=1
+[PASS] proof-mistral: job job_proof070-mistral-inference-1 (deduplicated re-run) state=done receipt=rcpt_mwpppbhr5o8j9r model_match=1
+[FAIL] proof-cohere: job job_proof070-cohere-inference-1 state=deferred receipt=rcpt_mwppqhdl7ym932 result=deferred requested=None actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"} err: 
+[FAIL] proof-openrouter: skipped — gauntlet did not promote; pinned job would refuse at EVIDENCE
+[FAIL] proof-cloudflare-ai: job job_proof070-cloudflare-ai-inference-1 state=deferred receipt=rcpt_mwpprzfq2kb8wm result=deferred requested=None actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err: 
+[FAIL] proof-emb-nim-nvidia: job job_proof070-nim-nvidia-embedding-1 state=deferred receipt=rcpt_mwpptj7agv7lol result=deferred requested=None actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"} err: 
+[FAIL] proof-emb-cloudflare-ai: job job_proof070-cloudflare-ai-embedding-1 state=deferred receipt=rcpt_mwppuob515bvkh result=deferred requested=@cf/baai/bge-base-en-v1.5 actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err: 
+[PASS] refuse-nonexistent-model: state=deferred receipt=None MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)'), ('cerebras', 'model no-such-model-xyz not listed for cerebras'), ('cloudflare-ai', 'model no-such-model-xyz not listed for cloudflare-ai'), ('cohere', 'model no-such-model-xyz not listed for cohere'), ('groq', 'model no-such-model-xyz not listed for groq'), ('lane-pollinations', 'resource serves openai, not no-such-model-xyz'), ('mistral', 'model no-such-model-xyz not listed for mistral'), ('nim-nvidia', 'model no-such-model-xyz not listed for nim-nvidia')] executions=0 claims=0
+[PASS] refuse-mistral-paid: state=deferred receipt=None COST-rejections=[('mistral', 'model codestral-2508 is paid and global allow_paid=0 (spend decision required)')] executions=0 claims=0
+[PASS] refuse-deepseek-unproven: state=deferred receipt=None EVIDENCE-rejections=[('deepseek', 'evidence_state=DISCOVERED — not verified usable capacity')] executions=0 claims=0
+[PASS] refuse-friendli-unproven: state=deferred receipt=None EVIDENCE-rejections=[('friendli', 'evidence_state=DISCOVERED — not verified usable capacity')] executions=0 claims=0
+[PASS] refuse-pinned-failover-pool: state=deferred receipt=None MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)')] executions=0 claims=0
+[PASS] verify2-cerebras: job job_mwpqcw9zjnfog6 state=done receipt=rcpt_mwpqd5w0b91ms5 result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED
+[PASS] verify2-mistral: job job_mwpqdeba78x0ze state=done receipt=rcpt_mwpqdpfvrcjvs5 result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED
+[PASS] verify2-cohere: job job_mwpqe28jige3nn state=done receipt=rcpt_mwpqe8zog9c26g result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED
+[FAIL] verify2-cloudflare-ai: job job_mwpqedk01mrfd2 state=deferred receipt=rcpt_mwpqee1p5p3g4n result=deferred model_match=None evidence=AVAILABLE claimant_rc=0 | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err:  | evidence=AVAILABLE
+[PASS] final-usable: usable=112
+
+21/30 steps passed; wrote /home/hatch/workspace/exchange/proof-results-2026-11-21.json
+FAILURES:
+  - gauntlet-groq: job job_mwpq3n5wgjxjot state=deferred receipt=rcpt_mwpq4ef2p6h3hb result=deferred model_match=None evidence=VERIFIED claimant_rc=0 | claimant out:  "model_actual": null, "state": "deferred", "receipt_id": "rcpt_mwpq4ef2p6h3hb", "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "TimeoutError: timed out"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "groq", "provider": "groq", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "groq", "provider": "groq", "worker": "nim-claimant-01"} err: 
+  - gauntlet-openrouter: job job_mwpq71tc7wkivd state=deferred receipt=rcpt_mwpq7anp0vkcc6 result=deferred model_match=None evidence=DISCOVERED claimant_rc=0 | claimant out: e retry shortly, or add your own provider key to use your own limits: https://openrouter.ai/workspaces/default/byok', 'provider_name': 'Google AI Studio', 'i"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"} err: 
+  - proof-groq: skipped
+  - proof-cohere: job job_proof070-cohere-inference-1 state=deferred receipt=rcpt_mwppqhdl7ym932 result=deferred requested=None actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"} err: 
+  - proof-openrouter: skipped
+  - proof-cloudflare-ai: job job_proof070-cloudflare-ai-inference-1 state=deferred receipt=rcpt_mwpprzfq2kb8wm result=deferred requested=None actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err: 
+  - proof-emb-nim-nvidia: job job_proof070-nim-nvidia-embedding-1 state=deferred receipt=rcpt_mwpptj7agv7lol result=deferred requested=None actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"} err: 
+  - proof-emb-cloudflare-ai: job job_proof070-cloudflare-ai-embedding-1 state=deferred receipt=rcpt_mwppuob515bvkh result=deferred requested=@cf/baai/bge-base-en-v1.5 actual=None model_match=None | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err: 
+  - verify2-cloudflare-ai: job job_mwpqedk01mrfd2 state=deferred receipt=rcpt_mwpqee1p5p3g4n result=deferred model_match=None evidence=AVAILABLE claimant_rc=0 | claimant out: {"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err:  | evidence=AVAILABLE

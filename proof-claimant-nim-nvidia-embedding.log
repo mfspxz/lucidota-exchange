@@ -1,0 +1,2 @@
+{"completed": "job_proof073-nim-nvidia-embedding-1", "claim_id": "claim_mwprkhfmc5z52q", "outcome": "SUCCEEDED", "model_requested": "nvidia/nemotron-3-embed-1b", "model_used": "nvidia/nemotron-3-embed-1b", "model_actual": "nvidia/nemotron-3-embed-1b", "state": "done", "receipt_id": "rcpt_mwprkk0g2p306c", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"}

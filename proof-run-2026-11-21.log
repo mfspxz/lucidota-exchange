@@ -1,0 +1,41 @@
+[PASS] health: 0.7.3 ok=True resources=42 capabilities=656 keys=11
+[PASS] capabilities-list: total=656 usable=124 proven=6
+[PASS] config-list: keys=11 allow_paid=0
+[PASS] zen-preflight: DOWN (skip zen gauntlet + proof)
+[FAIL] gauntlet-groq: verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'}
+[PASS] gauntlet-cerebras: job job_mwpre2erb5wb9i state=done receipt=rcpt_mwpreehk3ixwin result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[PASS] gauntlet-mistral: job job_mwpresw5b848m4 state=done receipt=rcpt_mwprf1jus8ptk8 result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[PASS] gauntlet-cohere: job job_mwprfbbfc19dts state=done receipt=rcpt_mwprfkap4xcwtl result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[FAIL] gauntlet-openrouter: job job_mwprfwjly8qpdd state=done receipt=rcpt_mwprgdv5rsn758 result=ok model_match=1 evidence=FREE claimant_rc=0 | claimant out: nie-5.5-flash-preview:free", "state": "done", "receipt_id": "rcpt_mwprgdv5rsn758", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"claim_transport_retry": "transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"} err: 
+[PASS] gauntlet-cloudflare-ai: job job_mwprgrtyrbxivk state=done receipt=rcpt_mwprgza4blys0e result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[FAIL] gauntlet-ai-router: verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'}
+[PASS] proof-nim-nvidia: job job_proof073-nim-nvidia-inference-1 state=done receipt=rcpt_mwprhy0kspaf2v result=ok requested=google/gemma-4-31b-it actual=google/gemma-4-31b-it model_match=1
+[PASS] proof-groq: job job_proof073-groq-inference-1 state=done receipt=rcpt_mwpribxllr0wrv result=ok requested=qwen/qwen3.8-27b actual=qwen/qwen3.8-27b model_match=1
+[PASS] proof-cerebras: job job_proof073-cerebras-inference-1 state=done receipt=rcpt_mwprimny7oddj0 result=ok requested=qwen-3.8-27b actual=qwen-3.8-27b model_match=1
+[PASS] proof-mistral: job job_proof073-mistral-inference-1 state=done receipt=rcpt_mwprj4w120czua result=ok requested=ministral-14b-latest actual=ministral-14b-latest model_match=1
+[PASS] proof-cohere: job job_proof073-cohere-inference-1 state=done receipt=rcpt_mwprjkukzta9ma result=ok requested=command-r7b-12-2024 actual=command-r7b-12-2024 model_match=1
+[FAIL] proof-openrouter: skipped — evidence_state=FREE; pinned job would refuse at EVIDENCE
+[PASS] proof-cloudflare-ai: job job_proof073-cloudflare-ai-inference-1 state=done receipt=rcpt_mwprk7uxien87u result=ok requested=@cf/google/gemma-4-26b-a4b-it actual=@cf/google/gemma-4-26b-a4b-it model_match=1
+[PASS] proof-emb-nim-nvidia: job job_proof073-nim-nvidia-embedding-1 state=done receipt=rcpt_mwprkk0g2p306c result=ok requested=nvidia/nemotron-3-embed-1b actual=nvidia/nemotron-3-embed-1b model_match=1
+[PASS] proof-emb-cloudflare-ai: job job_proof073-cloudflare-ai-embedding-1 state=done receipt=rcpt_mwprl1c0xf0wuz result=ok requested=@cf/baai/bge-base-en-v1.5 actual=@cf/baai/bge-base-en-v1.5 model_match=1
+[PASS] refuse-nonexistent-model: state=deferred receipt=rcpt_mwprlf90ud9xc7 MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)'), ('cerebras', 'model no-such-model-xyz not listed for cerebras'), ('cloudflare-ai', 'model no-such-model-xyz not listed for cloudflare-ai'), ('cohere', 'model no-such-model-xyz not listed for cohere'), ('groq', 'model no-such-model-xyz not listed for groq'), ('lane-pollinations', 'resource serves openai, not no-such-model-xyz'), ('mistral', 'model no-such-model-xyz not listed for mistral'), ('nim-nvidia', 'model no-such-model-xyz not listed for nim-nvidia')] executions=0 claims=0
+[PASS] refuse-mistral-paid: state=deferred receipt=None COST-rejections=[('mistral', 'model codestral-2508 is paid and global allow_paid=0 (spend decision required)')] executions=0 claims=0
+[PASS] refuse-deepseek-unproven: state=deferred receipt=None EVIDENCE-rejections=[('deepseek', 'evidence_state=DISCOVERED — not verified usable capacity')] executions=0 claims=0
+[PASS] refuse-friendli-unproven: state=deferred receipt=rcpt_mwprm0pa291eso EVIDENCE-rejections=[('friendli', 'evidence_state=DISCOVERED — not verified usable capacity')] executions=0 claims=0
+[PASS] refuse-pinned-failover-pool: state=deferred receipt=None MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)')] executions=0 claims=0
+[PASS] verify2-cerebras: already VERIFIED
+[PASS] verify2-mistral: already VERIFIED
+[PASS] verify2-cohere: already VERIFIED
+[PASS] verify2-cloudflare-ai: already VERIFIED
+[PASS] final-usable: usable=124
+
+26/30 steps passed; wrote /home/hatch/workspace/exchange/proof-results-2026-11-21.json
+FAILURES:
+  - gauntlet-groq: verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'}
+  - gauntlet-openrouter: job job_mwprfwjly8qpdd state=done receipt=rcpt_mwprgdv5rsn758 result=ok model_match=1 evidence=FREE claimant_rc=0 | claimant out: nie-5.5-flash-preview:free", "state": "done", "receipt_id": "rcpt_mwprgdv5rsn758", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"claim_transport_retry": "transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"} err: 
+  - gauntlet-ai-router: verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'}
+  - proof-openrouter: skipped

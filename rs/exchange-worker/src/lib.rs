@@ -143,6 +143,10 @@ fn build_env(env: &worker::Env) -> Result<Env, String> {
         exchange_key: env.secret("EXCHANGE_KEY").ok().map(|s| s.to_string()),
         secrets,
         http: Arc::new(FetchHttp),
+        // None → routes use the per-isolate global seal set, exactly as
+        // before the Env field existed (each Workers isolate has its
+        // own statics). The Some path is test-only isolation.
+        seen_seals: None,
     })
 }
 

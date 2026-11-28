@@ -1,0 +1,2 @@
+{"completed": "job_mwprgrtyrbxivk", "claim_id": "claim_mwprgu0wijfi2j", "outcome": "SUCCEEDED", "model_requested": "@cf/google/gemma-4-26b-a4b-it", "model_used": "@cf/google/gemma-4-26b-a4b-it", "model_actual": "@cf/google/gemma-4-26b-a4b-it", "state": null, "receipt_id": null, "taxonomy": null, "idempotent": false, "http": 409, "error": "envelope replay rejected: this envelope was already submitted"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}

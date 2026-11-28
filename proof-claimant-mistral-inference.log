@@ -1,0 +1,2 @@
+{"completed": "job_proof073-mistral-inference-1", "claim_id": "claim_mwprivx0ibirdp", "outcome": "SUCCEEDED", "model_requested": "ministral-14b-latest", "model_used": "ministral-14b-latest", "model_actual": "ministral-14b-latest", "state": "done", "receipt_id": "rcpt_mwprj4w120czua", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "mistral", "provider": "mistral", "worker": "nim-claimant-01"}

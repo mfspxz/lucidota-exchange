@@ -1,7 +1,10 @@
 //! exchange-core: the Lucidota Exchange governor logic in Rust.
 //!
-//! Faithful port of `~/workspace/exchange/worker.js` (v0.6.16 hardening
-//! bundle). SQL strings are verbatim; control flow mirrors the JS.
+//! Faithful port of `~/workspace/exchange/worker.js` (v0.7.3: v0.7.0
+//! per-model capabilities + knobs/dials config surface, v0.7.1
+//! inference-first verify gauntlet, v0.7.2 claim resume, v0.7.3 error
+//! taxonomy classes — on top of the v0.6.16 hardening bundle).
+//! SQL strings are verbatim; control flow mirrors the JS.
 //!
 //! The core is host-agnostic: it runs against any [`db::Db`] and any
 //! [`env::Env`], so the same logic serves Cloudflare Workers (D1 + fetch),
@@ -10,6 +13,7 @@
 pub mod adapters;
 pub mod ballot;
 pub mod claims;
+pub mod config;
 pub mod db;
 pub mod env;
 pub mod govern;
@@ -21,4 +25,4 @@ pub mod util;
 
 pub use claims::WorkerIdent;
 
-pub const VERSION: &str = "0.6.16";
+pub const VERSION: &str = "0.7.3";

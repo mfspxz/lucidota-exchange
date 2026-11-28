@@ -8,7 +8,7 @@ use crate::claims::{complete_claimed, delegate_execution, sweep_expired_claims, 
 use crate::db::{row_to_json, Db, DbError, RowExt, Val};
 use crate::env::Env;
 use crate::govern::{run_job, submit_job, unclaimed_queue_depth, QUEUE_FULL_THRESHOLD};
-use crate::migrate::{migrate, seed};
+use crate::migrate::{ensure_migrated, seed};
 use crate::observe::{
     auto_promote, billing_check, demote_check, list_resources_impl, observe,
     prune_health_observations, prune_seal_registry, provider_down_check, register_candidate,
@@ -18,7 +18,7 @@ use crate::policy::policy_version;
 use crate::util::{now_iso, sha256hex as sha256hex_util, ts, uid};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 pub struct Request {
     pub method: String,
@@ -108,21 +108,30 @@ async fn auth_worker(
 const REPLAY_TTL_MS: i64 = 60 * 60 * 1000;
 const REPLAY_MAX_SEEN: usize = 10000;
 
-static SEEN_SEALS: LazyLock<Mutex<HashMap<String, i64>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+static SEEN_SEALS: LazyLock<Arc<Mutex<HashMap<String, i64>>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
-fn sweep_seen_seals(now_ms: i64) {
-    if let Ok(mut m) = SEEN_SEALS.lock() {
+/// The seal set for this request: the Env-injected set when the host
+/// provides one (tests — one registry per test Env, fully isolated),
+/// otherwise the per-isolate global above (production; each Workers
+/// isolate has its own statics, so the global is per-isolate there).
+fn seen_seals(env: &Env) -> Arc<Mutex<HashMap<String, i64>>> {
+    env.seen_seals.clone().unwrap_or_else(|| SEEN_SEALS.clone())
+}
+
+fn sweep_seen_seals(map: &Mutex<HashMap<String, i64>>, now_ms: i64) {
+    if let Ok(mut m) = map.lock() {
         m.retain(|_, t| now_ms - *t <= REPLAY_TTL_MS);
     }
 }
 
-/// Test/fresh-isolate helper: clear the per-isolate in-memory seal set.
-/// In production each isolate has its own WASM instance (own statics);
-/// tests simulate a fresh isolate by clearing.
+/// Test/fresh-isolate helper: clear the in-memory seal set the given
+/// Env resolves to. In production each isolate has its own WASM
+/// instance (own statics); tests simulate a fresh isolate by clearing
+/// their own Env's injected set — never another test's.
 #[doc(hidden)]
-pub fn clear_seen_seals_for_test() {
-    if let Ok(mut m) = SEEN_SEALS.lock() {
+pub fn clear_seen_seals_for_test(env: &Env) {
+    if let Ok(mut m) = seen_seals(env).lock() {
         m.clear();
     }
 }
@@ -152,11 +161,12 @@ async fn record_envelope_rejection(db: &dyn Db, route: &str, b: &Value, reason: 
         .await;
 }
 
-async fn check_replay_db(db: &dyn Db, seal: &str) -> &'static str {
+async fn check_replay_db(db: &dyn Db, env: &Env, seal: &str) -> &'static str {
     let now_ms = chrono::Utc::now().timestamp_millis();
-    sweep_seen_seals(now_ms);
+    let map = seen_seals(env);
+    sweep_seen_seals(&map, now_ms);
     {
-        let m = SEEN_SEALS.lock().unwrap();
+        let m = map.lock().unwrap();
         if m.contains_key(seal) {
             return "replay";
         }
@@ -172,11 +182,11 @@ async fn check_replay_db(db: &dyn Db, seal: &str) -> &'static str {
         .await
     {
         Ok(0) => {
-            SEEN_SEALS.lock().unwrap().insert(seal.to_string(), now_ms);
+            map.lock().unwrap().insert(seal.to_string(), now_ms);
             "replay"
         }
         Ok(_) => {
-            SEEN_SEALS.lock().unwrap().insert(seal.to_string(), now_ms);
+            map.lock().unwrap().insert(seal.to_string(), now_ms);
             "ok"
         }
         Err(_) => "unavailable",
@@ -260,7 +270,7 @@ async fn require_envelope(db: &dyn Db, route: &str, b: &Value, env: &Env) -> Res
         return Err((401, format!("envelope rejected: {}", why)));
     }
     let seal = e.get("seal").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    match check_replay_db(db, &seal).await {
+    match check_replay_db(db, env, &seal).await {
         "replay" => {
             record_envelope_rejection(db, route, b, "replay: envelope seal already seen").await;
             return Err((409, "envelope replay rejected: this envelope was already submitted".to_string()));
@@ -311,7 +321,9 @@ pub async fn handle(db: &dyn Db, req: &Request, env: &Env) -> Response {
 
 async fn handle_inner(db: &dyn Db, req: &Request, env: &Env) -> Result<Response, DbError> {
     let path = req.path.clone();
-    migrate(db).await?;
+    // A3: was migrate() on EVERY request — the D1 burn, unguarded.
+    // ensure_migrated pays 1 PK row on a cold isolate, 0 when warm.
+    ensure_migrated(db).await?;
 
     if path == "/" && req.method == "GET" {
         return Ok(Response::json(
@@ -321,9 +333,22 @@ async fn handle_inner(db: &dyn Db, req: &Request, env: &Env) -> Result<Response,
     }
     if path == "/v1/health" && req.method == "GET" {
         let n = db.query_one("SELECT COUNT(*) c FROM resources", &[]).await?;
+        // v0.7.0 counts; pre-migration (tables absent) → 0, like the JS
+        // try/catch.
+        let caps = db
+            .query_one("SELECT COUNT(*) c FROM model_capabilities", &[])
+            .await
+            .map(|o| o.map(|r| r.i64_or("c", 0)).unwrap_or(0))
+            .unwrap_or(0);
+        let keys = db
+            .query_one("SELECT COUNT(*) c FROM key_config", &[])
+            .await
+            .map(|o| o.map(|r| r.i64_or("c", 0)).unwrap_or(0))
+            .unwrap_or(0);
         return Ok(Response::json(
             json!({ "ok": true, "version": crate::VERSION,
-                    "resources": n.map(|r| r.i64_or("c", 0)).unwrap_or(0), "at": now_iso() }),
+                    "resources": n.map(|r| r.i64_or("c", 0)).unwrap_or(0),
+                    "capabilities": caps, "keys": keys, "at": now_iso() }),
             200,
         ));
     }
@@ -403,6 +428,64 @@ async fn handle_inner(db: &dyn Db, req: &Request, env: &Env) -> Result<Response,
                 json!({ "claimed": false, "error": "resource requires local-trust claimant" }),
                 403,
             ));
+        }
+        // v0.7.2 CLAIM RESUME: a claim response lost to transport
+        // (truncated read) leaves the lease claimed server-side while
+        // the worker saw an error. The worker retries with resume:true;
+        // return ITS live unexpired claim delegation instead of claiming
+        // a new lease. A worker holds at most one active claim per
+        // resource, so the latest-expiring active claim is the lost
+        // one. No live claim of mine → fall through to a fresh claim.
+        if b.get("resume") == Some(&Value::Bool(true)) {
+            let mine = db
+                .query_one(
+                    "SELECT c.claim_id, c.job_id, c.lease_id, c.lease_expiry, c.policy_snapshot,
+                            c.receipt_requirements, c.idempotency_key, j.spec, e.id AS attempt_id
+                     FROM claims c JOIN jobs j ON j.id=c.job_id JOIN leases l ON l.id=c.lease_id
+                     LEFT JOIN executions e ON e.claim_id=c.claim_id
+                     WHERE c.worker_id=? AND c.resource_id=? AND c.status='active'
+                       AND l.state='claimed' AND c.lease_expiry > ?
+                     ORDER BY c.lease_expiry DESC LIMIT 1",
+                    &[
+                        Val::from(worker.worker_id.clone()),
+                        Val::from(resource_id.to_string()),
+                        Val::from(now_iso()),
+                    ],
+                )
+                .await?;
+            if let Some(mine) = mine {
+                let rspec: Value =
+                    serde_json::from_str(&mine.text_or("spec", "{}")).unwrap_or(json!({}));
+                let rconf: Value =
+                    serde_json::from_str(&res.text_or("config", "{}")).unwrap_or(json!({}));
+                let parse_or_raw = |s: String| -> Value {
+                    serde_json::from_str(&s).unwrap_or(Value::String(s))
+                };
+                return Ok(Response::json(
+                    json!({ "claimed": true, "resumed": true,
+                        "delegation": {
+                            "claim_id": mine.text_or("claim_id", ""),
+                            "resource_id": resource_id,
+                            "capability": rspec.get("capability").cloned().unwrap_or(Value::Null),
+                            "input": rspec.get("input").cloned().unwrap_or(Value::Null),
+                            "policy_snapshot": parse_or_raw(mine.text_or("policy_snapshot", "")),
+                            "lease_expiry": mine.text_or("lease_expiry", ""),
+                            "attempt": val_json(mine.get("attempt_id")),
+                            "idempotency_key": val_json(mine.get("idempotency_key")),
+                            "receipt_requirements": parse_or_raw(mine.text_or("receipt_requirements", "")),
+                            "credential_ref": rconf.get("credential_ref").cloned().unwrap_or(Value::Null),
+                            "requested_model": rspec.get("input").and_then(|i| i.get("model"))
+                                .and_then(|v| v.as_str()).filter(|s| !s.is_empty())
+                                .map(|s| Value::from(s.to_string()))
+                                .or_else(|| rconf.get("model").cloned())
+                                .unwrap_or(Value::Null),
+                            "model_exact": rconf.get("model_exact") != Some(&Value::Bool(false)),
+                        },
+                        "lease_id": mine.text_or("lease_id", ""), "job_id": mine.text_or("job_id", ""),
+                        "attempt_id": val_json(mine.get("attempt_id")), "at": now_iso() }),
+                    200,
+                ));
+            }
         }
         let d = db
             .query_one(
@@ -495,7 +578,17 @@ async fn handle_inner(db: &dyn Db, req: &Request, env: &Env) -> Result<Response,
                     "attempt": attempt_id, "idempotency_key": idempotency_key,
                     "receipt_requirements": receipt_requirements,
                     "credential_ref": rconf.get("credential_ref").cloned().unwrap_or(Value::Null),
-                    "requested_model": rconf.get("model").cloned().unwrap_or(Value::Null),
+                    // v0.7.0: the delegation binds the JOB's requested
+                    // model first — the resource default only when the
+                    // job pins none. The claimant must execute this
+                    // exact model or refuse (MODEL_MISMATCH);
+                    // model_exact=false pools serve unpinned jobs only.
+                    "requested_model": spec.get("input").and_then(|i| i.get("model"))
+                        .and_then(|v| v.as_str()).filter(|s| !s.is_empty())
+                        .map(|s| Value::from(s.to_string()))
+                        .or_else(|| rconf.get("model").cloned())
+                        .unwrap_or(Value::Null),
+                    "model_exact": rconf.get("model_exact") != Some(&Value::Bool(false)),
                 },
                 "lease_id": d.text_or("lease_id", ""), "job_id": d.text_or("job_id", ""),
                 "attempt_id": attempt_id, "at": now_iso() }),
@@ -607,6 +700,31 @@ async fn handle_inner(db: &dyn Db, req: &Request, env: &Env) -> Result<Response,
 
     if path == "/v1/capacity" && req.method == "GET" {
         return capacity(db).await;
+    }
+
+    // ---- v0.7.0: CAPABILITIES + KNOBS/DIALS ----
+    // /v1/capabilities lists every model the Exchange can route, per
+    // key, per model — from model_capabilities (live /models
+    // enumeration). /v1/config is the knobs: per-key enable, allowlist,
+    // cost cap, failover order + the global allow_paid kill-switch.
+    // Every change is receipted in config_log + evidence_log. All four
+    // routes sit behind the Exchange-key gate above (in handle_inner,
+    // `authed` has already run by this point).
+    if path == "/v1/capabilities" && req.method == "GET" {
+        return capabilities(db, req).await;
+    }
+    if path == "/v1/config" && req.method == "GET" {
+        return get_config(db).await;
+    }
+    if path == "/v1/config/log" && req.method == "GET" {
+        return get_config_log(db, req).await;
+    }
+    if path == "/v1/config" && req.method == "POST" {
+        let b = match &req.body {
+            Some(v) => v.clone(),
+            None => return Ok(Response::json(json!({ "error": "invalid JSON" }), 400)),
+        };
+        return post_config(db, &b).await;
     }
 
     // ---- voting ----
@@ -740,6 +858,458 @@ async fn handle_inner(db: &dyn Db, req: &Request, env: &Env) -> Result<Response,
     Ok(Response::json(json!({ "error": "not found" }), 404))
 }
 
+/// Convert a single DB value to JSON (mirrors D1 row value semantics).
+/// Takes the `HashMap::get` result directly: missing column → Null.
+fn val_json(v: Option<&crate::db::Val>) -> Value {
+    match v {
+        None | Some(crate::db::Val::Null) => Value::Null,
+        Some(crate::db::Val::Int(i)) => Value::from(*i),
+        Some(crate::db::Val::Real(f)) => serde_json::Number::from_f64(*f)
+            .map(Value::Number)
+            .unwrap_or(Value::Null),
+        Some(crate::db::Val::Text(s)) => Value::from(s.clone()),
+        Some(crate::db::Val::Blob(b)) => Value::from(hex::encode(b)),
+    }
+}
+
+// --- v0.7.0 capabilities + config handlers -----------------------------------
+
+async fn capabilities(db: &dyn Db, req: &Request) -> Result<Response, DbError> {
+    let rows = db
+        .query_all(
+            "SELECT mc.resource_id, mc.model, mc.capability, mc.cost, mc.source, mc.listed_at,
+                    mc.last_executed_at, mc.last_error,
+                    r.provider_id, r.evidence_state, r.state, r.config
+             FROM model_capabilities mc JOIN resources r ON r.id = mc.resource_id
+             ORDER BY mc.resource_id, mc.model",
+            &[],
+        )
+        .await?;
+    let key_configs = crate::config::load_key_configs(db).await;
+    let q_key = req.query.get("key");
+    let q_cap = req.query.get("capability");
+    let q_cost = req.query.get("cost");
+    let q_usable = req.query.get("usable").map(|s| s.as_str()) == Some("1");
+    let mut items: Vec<Value> = Vec::new();
+    let mut by_cap: serde_json::Map<String, Value> = serde_json::Map::new();
+    let mut by_cost: serde_json::Map<String, Value> = serde_json::Map::new();
+    let (mut usable_count, mut proven_count) = (0i64, 0i64);
+    for row in &rows {
+        let cfg: Value = serde_json::from_str(&row.text_or("config", "{}")).unwrap_or(json!({}));
+        let key_id = crate::config::key_id_of(&cfg);
+        let kc = key_id.as_ref().and_then(|k| key_configs.get(k));
+        let key_enabled = kc.map(|k| k.enabled != 0).unwrap_or(true);
+        let cost = row.text("cost");
+        let usable = EVIDENCE_USABLE.contains(&row.text_or("evidence_state", "").as_str())
+            && row.text_or("state", "") != "QUARANTINED"
+            && key_enabled
+            && cost.as_deref() != Some("unfunded");
+        let proven = row.text("last_executed_at").is_some();
+        if let Some(qk) = q_key {
+            if key_id.as_deref() != Some(qk.as_str()) {
+                continue;
+            }
+        }
+        if let Some(qc) = q_cap {
+            if row.text_or("capability", "") != *qc {
+                continue;
+            }
+        }
+        if let Some(qc) = q_cost {
+            if cost.as_deref() != Some(qc.as_str()) {
+                continue;
+            }
+        }
+        if q_usable && !usable {
+            continue;
+        }
+        let cur = by_cap.get(&row.text_or("capability", "")).and_then(|v| v.as_i64()).unwrap_or(0);
+        by_cap.insert(row.text_or("capability", ""), Value::from(cur + 1));
+        let cost_key = cost.clone().unwrap_or_else(|| "null".to_string());
+        let cur = by_cost.get(&cost_key).and_then(|v| v.as_i64()).unwrap_or(0);
+        by_cost.insert(cost_key, Value::from(cur + 1));
+        if usable {
+            usable_count += 1;
+        }
+        if proven {
+            proven_count += 1;
+        }
+        items.push(json!({
+            "resource_id": row.text_or("resource_id", ""), "key_id": key_id,
+            "provider_id": row.text_or("provider_id", ""),
+            "model": row.text_or("model", ""), "capability": row.text_or("capability", ""),
+            "cost": val_json(row.get("cost")), "source": val_json(row.get("source")),
+            "listed_at": val_json(row.get("listed_at")),
+            "last_executed_at": val_json(row.get("last_executed_at")),
+            "last_error": val_json(row.get("last_error")),
+            "evidence_state": row.text_or("evidence_state", ""), "state": row.text_or("state", ""),
+            "key_enabled": key_enabled, "usable": usable, "proven": proven,
+        }));
+    }
+    Ok(Response::json(
+        json!({ "at": now_iso(), "total": items.len(), "usable": usable_count, "proven": proven_count,
+            "by_capability": by_cap, "by_cost": by_cost, "capabilities": items,
+            "note": "Listed is not proven: proven means last_executed_at is set. Usable means the resource is verified, the key is enabled, and the model is funded." }),
+        200,
+    ))
+}
+
+async fn get_config(db: &dyn Db) -> Result<Response, DbError> {
+    let kc_rows = db
+        .query_all("SELECT * FROM key_config ORDER BY failover_order, key_id", &[])
+        .await?;
+    let g_rows = db.query_all("SELECT * FROM exchange_config", &[]).await?;
+    let log_rows = db
+        .query_all("SELECT * FROM config_log ORDER BY id DESC LIMIT 20", &[])
+        .await?;
+    let keys: Vec<Value> = kc_rows
+        .iter()
+        .map(|k| {
+            let allowlist = match k.get("allowlist") {
+                Some(crate::db::Val::Text(s)) => {
+                    serde_json::from_str::<Value>(s).unwrap_or(Value::Null)
+                }
+                _ => Value::Null,
+            };
+            json!({
+                "key_id": k.text_or("key_id", ""),
+                "enabled": !matches!(k.get("enabled"), Some(crate::db::Val::Int(0))),
+                "allowlist": allowlist,
+                "cost_cap": val_json(k.get("cost_cap")),
+                "failover_order": val_json(k.get("failover_order")),
+                "updated_at": val_json(k.get("updated_at")),
+                "updated_by": val_json(k.get("updated_by")),
+            })
+        })
+        .collect();
+    let mut global = serde_json::Map::new();
+    for g in &g_rows {
+        global.insert(g.text_or("key", ""), val_json(g.get("value")));
+    }
+    Ok(Response::json(
+        json!({ "at": now_iso(), "keys": keys, "global": Value::Object(global),
+            "recent_changes": log_rows.iter().map(row_to_json).collect::<Vec<_>>() }),
+        200,
+    ))
+}
+
+async fn get_config_log(db: &dyn Db, req: &Request) -> Result<Response, DbError> {
+    let rows = match req.query.get("key_id") {
+        Some(k) => {
+            db.query_all(
+                "SELECT * FROM config_log WHERE key_id=? ORDER BY id DESC LIMIT 100",
+                &[Val::from(k.clone())],
+            )
+            .await?
+        }
+        None => {
+            db.query_all("SELECT * FROM config_log ORDER BY id DESC LIMIT 100", &[])
+                .await?
+        }
+    };
+    Ok(Response::json(
+        json!({ "at": now_iso(), "log": rows.iter().map(row_to_json).collect::<Vec<_>>() }),
+        200,
+    ))
+}
+
+/// Insert a config_log row and return its id (RETURNING — exact id,
+/// where the JS reads meta.last_row_id).
+async fn config_log_insert(
+    db: &dyn Db,
+    actor: &str,
+    scope: &str,
+    key_id: Option<&str>,
+    field: &str,
+    from: &str,
+    to: &str,
+    reason: &str,
+) -> Result<Option<i64>, DbError> {
+    let r = db
+        .query_one(
+            "INSERT INTO config_log (actor,scope,key_id,field,from_value,to_value,reason) VALUES (?,?,?,?,?,?,?) RETURNING id",
+            &[
+                Val::from(actor.to_string()),
+                Val::from(scope.to_string()),
+                key_id.map(|k| Val::from(k.to_string())).unwrap_or(Val::Null),
+                Val::from(field.to_string()),
+                Val::from(from.to_string()),
+                Val::from(to.to_string()),
+                Val::from(reason.to_string()),
+            ],
+        )
+        .await?;
+    Ok(r.and_then(|row| row.i64("id")))
+}
+
+async fn post_config(db: &dyn Db, b: &Value) -> Result<Response, DbError> {
+    let actor = "bearer:exchange-key";
+    let reason: String = match b.get("reason") {
+        Some(Value::String(s)) => s.clone(),
+        Some(Value::Null) | None => String::new(),
+        Some(v) => v.to_string(),
+    }
+    .chars()
+    .take(200)
+    .collect();
+    let scope = b.get("scope").and_then(|v| v.as_str()).unwrap_or("");
+    if scope == "global" {
+        if b.get("field").and_then(|v| v.as_str()) != Some("allow_paid") {
+            return Ok(Response::json(json!({ "error": "global field must be allow_paid" }), 400));
+        }
+        let v = b.get("value").cloned().unwrap_or(Value::Null);
+        let valid = match &v {
+            Value::Number(n) => n.as_f64().map(|f| f == 0.0 || f == 1.0).unwrap_or(false),
+            Value::String(s) => s == "0" || s == "1",
+            _ => false,
+        };
+        if !valid {
+            return Ok(Response::json(json!({ "error": "allow_paid must be 0 or 1" }), 400));
+        }
+        let to = match &v {
+            Value::String(s) => s.clone(),
+            Value::Number(n) => {
+                if n.as_f64().map(|f| f == 1.0).unwrap_or(false) { "1".to_string() } else { "0".to_string() }
+            }
+            _ => unreachable!(),
+        };
+        let cur = db
+            .query_one("SELECT value FROM exchange_config WHERE key='allow_paid'", &[])
+            .await?;
+        let from = cur.map(|r| r.text_or("value", "0")).unwrap_or_else(|| "0".to_string());
+        db.exec(
+            "INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('allow_paid',?,?)",
+            &[Val::from(to.clone()), Val::from(now_iso())],
+        )
+        .await?;
+        let log_id = config_log_insert(db, actor, "global", None, "allow_paid", &from, &to, &reason).await?;
+        db.exec(
+            "INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)",
+            &[
+                Val::from("config:global"),
+                Val::from(format!("allow_paid={}", from)),
+                Val::from(format!("allow_paid={}", to)),
+                Val::from("config-change"),
+                Val::from(format!(
+                    "allow_paid {} -> {} by {}{}",
+                    from,
+                    to,
+                    actor,
+                    if reason.is_empty() { String::new() } else { format!(" ({})", reason) }
+                )),
+            ],
+        )
+        .await?;
+        return Ok(Response::json(
+            json!({ "changed": true, "scope": "global", "field": "allow_paid",
+                "from": from, "to": to, "log_id": log_id, "at": now_iso(),
+                "note": if to == "1" { "PAID EXECUTION ENABLED — paid models may now execute with spend authority" } else { "paid execution disabled" } }),
+            200,
+        ));
+    }
+    if scope != "key" {
+        return Ok(Response::json(json!({ "error": "scope must be 'key' or 'global'" }), 400));
+    }
+    let key_id = match b.get("key_id") {
+        Some(Value::String(s)) => s.clone(),
+        Some(Value::Null) | None => String::new(),
+        Some(v) => v.to_string(),
+    };
+    if key_id.is_empty() {
+        return Ok(Response::json(json!({ "error": "key_id required" }), 400));
+    }
+    // The key must exist: at least one resource registered with this key_id.
+    let res_rows = db.query_all("SELECT id, config FROM resources", &[]).await?;
+    let mut key_exists = false;
+    for rr in &res_rows {
+        let cfg: Value = serde_json::from_str(&rr.text_or("config", "{}")).unwrap_or(json!({}));
+        if cfg.get("key_id").and_then(|v| v.as_str()) == Some(key_id.as_str()) {
+            key_exists = true;
+            break;
+        }
+    }
+    if !key_exists {
+        return Ok(Response::json(
+            json!({ "error": format!("unknown key_id {} (no resource registered with this key)", key_id) }),
+            400,
+        ));
+    }
+    let cur = db
+        .query_one("SELECT * FROM key_config WHERE key_id=?", &[Val::from(key_id.clone())])
+        .await?;
+    let (mut kc_enabled, mut kc_allowlist, mut kc_cost_cap, mut kc_failover) =
+        match &cur {
+            Some(row) => (
+                row.i64_or("enabled", 1),
+                match row.get("allowlist") {
+                    Some(crate::db::Val::Text(s)) => Some(s.clone()),
+                    _ => None,
+                },
+                row.f64("cost_cap"),
+                row.i64_or("failover_order", 100),
+            ),
+            None => (1i64, None, None, 100i64),
+        };
+    let field_in = b.get("field").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let mut field = field_in.clone();
+    let (from, to): (String, String);
+    match field_in.as_str() {
+        "enabled" => {
+            let v = b.get("value").cloned().unwrap_or(Value::Null);
+            let as_num: Option<i64> = match &v {
+                Value::Number(n) => n.as_i64().filter(|i| *i == 0 || *i == 1),
+                Value::Bool(x) => Some(if *x { 1 } else { 0 }),
+                _ => None,
+            };
+            let n = match as_num {
+                Some(n) => n,
+                None => {
+                    return Ok(Response::json(json!({ "error": "enabled must be 0/1" }), 400));
+                }
+            };
+            from = kc_enabled.to_string();
+            to = n.to_string();
+            kc_enabled = n;
+        }
+        "allowlist" => {
+            let v = b.get("value").cloned().unwrap_or(Value::Null);
+            let arr = match v.as_array() {
+                Some(a) => a.clone(),
+                None => {
+                    return Ok(Response::json(
+                        json!({ "error": "allowlist must be an array of model ids (or null to clear — send value:null)" }),
+                        400,
+                    ));
+                }
+            };
+            // Every allowlist entry must be a listed model.
+            let mc_rows = db.query_all("SELECT model FROM model_capabilities", &[]).await?;
+            let listed: std::collections::HashSet<String> =
+                mc_rows.iter().map(|m| m.text_or("model", "")).collect();
+            let bad: Vec<String> = arr
+                .iter()
+                .filter(|m| !m.as_str().map(|s| listed.contains(s)).unwrap_or(false))
+                .map(|m| match m {
+                    Value::String(s) => s.clone(),
+                    other => other.to_string(),
+                })
+                .collect();
+            if !bad.is_empty() {
+                return Ok(Response::json(
+                    json!({ "error": format!("allowlist models not listed for any resource: {}", bad.join(", ")) }),
+                    400,
+                ));
+            }
+            from = kc_allowlist.clone().unwrap_or_else(|| "null".to_string());
+            to = serde_json::to_string(&Value::Array(arr)).unwrap_or_default();
+            kc_allowlist = Some(to.clone());
+        }
+        "allowlist_clear" => {
+            from = kc_allowlist.clone().unwrap_or_else(|| "null".to_string());
+            to = "null".to_string();
+            kc_allowlist = None;
+            field = "allowlist".to_string();
+        }
+        "cost_cap" => {
+            let v = b.get("value").cloned().unwrap_or(Value::Null);
+            match &v {
+                Value::Null => {
+                    from = kc_cost_cap.map(|c| js_num_str(c)).unwrap_or_else(|| "null".to_string());
+                    to = "null".to_string();
+                    kc_cost_cap = None;
+                }
+                Value::Number(n) => {
+                    let f = n.as_f64().unwrap_or(-1.0);
+                    if f < 0.0 {
+                        return Ok(Response::json(
+                            json!({ "error": "cost_cap must be a number >= 0 or null" }),
+                            400,
+                        ));
+                    }
+                    from = kc_cost_cap.map(|c| js_num_str(c)).unwrap_or_else(|| "null".to_string());
+                    to = js_num_str(f);
+                    kc_cost_cap = Some(f);
+                }
+                _ => {
+                    return Ok(Response::json(
+                        json!({ "error": "cost_cap must be a number >= 0 or null" }),
+                        400,
+                    ));
+                }
+            }
+        }
+        "failover_order" => {
+            let v = b.get("value").cloned().unwrap_or(Value::Null);
+            let n = v.as_i64().filter(|i| *i >= 0);
+            let n = match n {
+                Some(n) => n,
+                None => {
+                    return Ok(Response::json(
+                        json!({ "error": "failover_order must be an integer >= 0" }),
+                        400,
+                    ));
+                }
+            };
+            from = kc_failover.to_string();
+            to = n.to_string();
+            kc_failover = n;
+        }
+        _ => {
+            return Ok(Response::json(
+                json!({ "error": "field must be enabled, allowlist, allowlist_clear, cost_cap, or failover_order" }),
+                400,
+            ));
+        }
+    }
+    db.exec(
+        "INSERT OR REPLACE INTO key_config (key_id,enabled,allowlist,cost_cap,failover_order,updated_at,updated_by) VALUES (?,?,?,?,?,?,?)",
+        &[
+            Val::from(key_id.clone()),
+            Val::from(kc_enabled),
+            kc_allowlist.clone().map(Val::from).unwrap_or(Val::Null),
+            kc_cost_cap.map(Val::from).unwrap_or(Val::Null),
+            Val::from(kc_failover),
+            Val::from(now_iso()),
+            Val::from(actor),
+        ],
+    )
+    .await?;
+    let log_id = config_log_insert(db, actor, "key", Some(&key_id), &field, &from, &to, &reason).await?;
+    db.exec(
+        "INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)",
+        &[
+            Val::from(format!("config:key:{}", key_id)),
+            Val::from(format!("{}={}", field, from)),
+            Val::from(format!("{}={}", field, to)),
+            Val::from("config-change"),
+            Val::from(format!(
+                "key {} {} {} -> {} by {}{}",
+                key_id,
+                field,
+                from,
+                to,
+                actor,
+                if reason.is_empty() { String::new() } else { format!(" ({})", reason) }
+            )),
+        ],
+    )
+    .await?;
+    Ok(Response::json(
+        json!({ "changed": true, "scope": "key", "key_id": key_id, "field": field,
+            "from": from, "to": to, "log_id": log_id, "at": now_iso() }),
+        200,
+    ))
+}
+
+/// JS `String(number)`: integers print without a fraction (5.0 → "5").
+fn js_num_str(f: f64) -> String {
+    if f == f.trunc() && f.abs() < 1e15 {
+        format!("{}", f as i64)
+    } else {
+        format!("{}", f)
+    }
+}
+
 /// Match `/v1/resources/<id>/evidence`-style paths. Returns the `<id>`.
 fn match_path<'a>(path: &'a str, prefix: &str, suffix: &str) -> Option<String> {
     if !path.starts_with(prefix) {
@@ -770,8 +1340,14 @@ async fn verify_resource(db: &dyn Db, rid: &str, env: &Env) -> Result<Response, 
     let adapter = crate::adapters::adapter_for(&r);
     if let Some(ref a) = adapter {
         if a.claimed() {
+            // v0.7.1: prefer the inference capability for the probe —
+            // an unordered caps[0] took embedding first for keys whose
+            // embedding row was inserted first, and the gauntlet built
+            // an embedding probe with empty input. Inference is the
+            // probe that earns the ladder; embedding-only resources
+            // still probe embedding.
             let caps = db
-                .query_all("SELECT capability FROM resource_capabilities WHERE resource_id=?", &[Val::from(rid.to_string())])
+                .query_all("SELECT capability FROM resource_capabilities WHERE resource_id=? ORDER BY CASE WHEN capability='inference' THEN 0 ELSE 1 END", &[Val::from(rid.to_string())])
                 .await?;
             let cap = caps.first().map(|c| c.text_or("capability", ""));
             match cap {
@@ -1324,7 +1900,7 @@ async fn verify_receipt(db: &dyn Db, vid: &str) -> Result<Response, DbError> {
 
 /// scheduled: the 30-min reaction loop. Returns the cron output object.
 pub async fn scheduled(db: &dyn Db, env: &Env) -> Result<Value, DbError> {
-    migrate(db).await?;
+    ensure_migrated(db).await?;
     let now_iso_s = now_iso();
     let rs = db.query_all("SELECT * FROM resources", &[]).await?;
     let mut out: Vec<Value> = Vec::new();
@@ -1382,34 +1958,48 @@ pub async fn scheduled(db: &dyn Db, env: &Env) -> Result<Value, DbError> {
                 continue;
             }
             Some(a) => {
-                // probe() on claimed never happens here (handled above).
-                let p = a.probe(&r, env).await;
-                let o = observe(db, &rid, p.ok, p.latency_ms, &p.detail).await?;
-                if p.ok {
-                    let cs = db
-                        .query_one("SELECT credential_state FROM resources WHERE id=?", &[Val::from(rid.clone())])
-                        .await?
-                        .map(|r| r.text_or("credential_state", ""))
-                        .unwrap_or_default();
-                    if (ev == "DISCOVERED" || ev == "UNKNOWN" || ev == "PARKED") && cs != "invalid" {
-                        set_evidence(db, &rid, "ACCESSIBLE", "cron-probe",
-                            &format!("probe ok {}ms — auto-ingested", p.latency_ms), false).await?;
+                // governor-promotion-fix (2026-11-24): worker.js wraps this
+                // probe block in try/catch per resource — a fault records an
+                // error entry and the loop continues to the next resource.
+                // The Rust port propagated every error with `?`, so one
+                // faulting resource aborted the whole cron run and froze
+                // promotion/demotion for every resource after it. Parity
+                // restored: isolate the block, record, continue.
+                let probe_block: Result<(), DbError> = (async {
+                    // probe() on claimed never happens here (handled above).
+                    let p = a.probe(&r, env).await;
+                    let o = observe(db, &rid, p.ok, p.latency_ms, &p.detail).await?;
+                    if p.ok {
+                        let cs = db
+                            .query_one("SELECT credential_state FROM resources WHERE id=?", &[Val::from(rid.clone())])
+                            .await?
+                            .map(|r| r.text_or("credential_state", ""))
+                            .unwrap_or_default();
+                        if (ev == "DISCOVERED" || ev == "UNKNOWN" || ev == "PARKED") && cs != "invalid" {
+                            set_evidence(db, &rid, "ACCESSIBLE", "cron-probe",
+                                &format!("probe ok {}ms — auto-ingested", p.latency_ms), false).await?;
+                        }
+                        let ti = match tier_memo.remove(&rid) {
+                            Some(t) => t,
+                            None => warranted_tier_info(db, &rid).await?,
+                        };
+                        auto_promote(db, &rid, Some(&ti)).await?;
+                        tier_memo.insert(rid.clone(), ti);
                     }
-                    let ti = match tier_memo.remove(&rid) {
-                        Some(t) => t,
-                        None => warranted_tier_info(db, &rid).await?,
-                    };
-                    auto_promote(db, &rid, Some(&ti)).await?;
-                    tier_memo.insert(rid.clone(), ti);
+                    let dev = demote_check(db, &rid, None).await?;
+                    let cur = db
+                        .query_one("SELECT evidence_state,state FROM resources WHERE id=?", &[Val::from(rid.clone())])
+                        .await?
+                        .unwrap_or_default();
+                    out.push(json!({ "resource": rid, "ok": p.ok, "latency_ms": p.latency_ms,
+                                     "state": cur.text_or("state", ""), "ev": cur.text_or("evidence_state", "") }));
+                    let _ = (o, dev);
+                    Ok(())
+                }).await;
+                if let Err(e) = probe_block {
+                    out.push(json!({ "resource": rid, "ok": false,
+                                     "error": e.0.chars().take(120).collect::<String>() }));
                 }
-                let dev = demote_check(db, &rid, None).await?;
-                let cur = db
-                    .query_one("SELECT evidence_state,state FROM resources WHERE id=?", &[Val::from(rid.clone())])
-                    .await?
-                    .unwrap_or_default();
-                out.push(json!({ "resource": rid, "ok": p.ok, "latency_ms": p.latency_ms,
-                                 "state": cur.text_or("state", ""), "ev": cur.text_or("evidence_state", "") }));
-                let _ = (o, dev);
             }
         }
     }

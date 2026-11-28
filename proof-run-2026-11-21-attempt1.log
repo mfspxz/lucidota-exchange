@@ -1,0 +1,12 @@
+[PASS] health: 0.7.0 ok=True resources=42 capabilities=656 keys=11
+[FAIL] capabilities-list: total=None usable=None proven=None
+[PASS] config-list: keys=11 allow_paid=0
+[PASS] zen-preflight: DOWN (skip zen gauntlet + proof)
+[FAIL] gauntlet-groq: job job_mwpp5qpz3c0hv6 state=done receipt=rcpt_mwpp5u7f4twbw2 result=ok model_match=1 evidence=None claimant_rc=0 | claimant out: , "claim_id": "claim_mwpp5sbb7y65ty", "outcome": "SUCCEEDED", "model_requested": "qwen/qwen3.8-27b", "model_used": "qwen/qwen3.8-27b", "model_actual": "qwen/qwen3.8-27b", "state": "done", "receipt_id": "rcpt_mwpp5u7f4twbw2", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "groq", "provider": "groq", "worker": "nim-claimant-01"} err: 
+[FAIL] gauntlet-cerebras: job job_mwpp631z4ym8m8 state=done receipt=rcpt_mwpp6bpeyjtf10 result=ok model_match=1 evidence=None claimant_rc=0 | claimant out: 8m8", "claim_id": "claim_mwpp64nl72o6ba", "outcome": "SUCCEEDED", "model_requested": "qwen-3.8-27b", "model_used": "qwen-3.8-27b", "model_actual": "qwen-3.8-27b", "state": "done", "receipt_id": "rcpt_mwpp6bpeyjtf10", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cerebras", "provider": "cerebras", "worker": "nim-claimant-01"} err: 
+[FAIL] gauntlet-mistral: job job_mwpp79j0f0nk7a state=deferred receipt=rcpt_mwpp7mumzrel91 result=deferred model_match=None evidence=None claimant_rc=0 | claimant out: inistral-14b-latest", "model_used": "ministral-14b-latest", "model_actual": null, "state": "deferred", "receipt_id": "rcpt_mwpp7mumzrel91", "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "embedding job has no input texts \u2014 refusing without executing"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "mistral", "provider": "mistral", "worker": "nim-claimant-01"} err: 
+[FAIL] gauntlet-cohere: job job_mwpp8mwq3jtrts state=deferred receipt=rcpt_mwpp8uocrf5e2d result=deferred model_match=None evidence=None claimant_rc=0 | claimant out: : "command-r7b-12-2024", "model_used": "command-r7b-12-2024", "model_actual": null, "state": "deferred", "receipt_id": "rcpt_mwpp8uocrf5e2d", "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "embedding job has no input texts \u2014 refusing without executing"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"} err: 

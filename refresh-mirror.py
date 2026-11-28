@@ -34,13 +34,23 @@ refresh-mirror.py.pre-phase3-20261120.bak):
      (old /opt/hatch/skills/skill-creator/bin kept as fallback).
   7. Resumable progress + drift tolerance (this revision).
 
+2026-11-25 treatment (EXC-091 mirror-signature class): the refresh now
+re-signs d1-mirror.db and d1-mirror.snapshot.json via `pl wsign` as its
+final step. The .sig convention is live (DEPLOY-PROCEDURE-D1-SNAPSHOT.md
+step 3 treats re-signing a stale mirror .sig as routine; EXC-100 did it
+by hand after its refresh). Before this fix the script contained no
+signing step at all, so every refresh stranded the mirror's .sig
+unverifiable by construction. A sign failure now raises (nonzero exit)
+instead of leaving a silently stale .sig.
+
 Done = every table fetched and verified (OK or explicitly DRIFT-marked),
-mirror replaced, snapshot timestamp updated.
+mirror replaced, snapshot timestamp updated, both artifacts re-signed.
 """
 import hashlib
 import json
 import os
 import sqlite3
+import subprocess
 import sys
 import time
 import urllib.error
@@ -59,6 +69,7 @@ ACCOUNT = "243aabef9144fd3b8dd334cb19319e75"
 DB_UUID = "0ea89801-9b0a-4efa-9d2f-170d7d285e69"
 MIRROR = os.path.expanduser("~/workspace/exchange/d1-mirror.db")
 STAMP = os.path.expanduser("~/workspace/exchange/d1-mirror.snapshot.json")
+PL = os.path.expanduser("~/workspace/proof-ledger/pl")
 TMP = MIRROR + ".new"
 PROGRESS = os.path.expanduser("~/workspace/exchange/d1-mirror.progress.json")
 FREEZE_END = 1791417600  # 2026-10-08 00:00 UTC
@@ -126,6 +137,22 @@ def fetch_table(g, tname, ddl):
     g.commit()
     n = g.execute(f'SELECT COUNT(*) FROM "{tname}"').fetchone()[0]
     return n, live_n
+
+
+def sign_artifact(path, desc):
+    """Re-sign one refreshed artifact with the estate wsign tool — the
+    same mechanism/identity as the documented manual routine
+    (`pl wsign op=sign`, key d452a6b7bdefd1ac). Raises on failure so a
+    refresh can never report success while stranding a stale .sig."""
+    try:
+        r = subprocess.run([PL, "wsign", "op=sign", f"file={path}", f"desc={desc}"],
+                           capture_output=True, text=True)
+    except OSError as e:
+        raise RuntimeError(f"wsign sign could not run for {path}: {e}")
+    if r.returncode != 0:
+        raise RuntimeError(f"wsign sign failed for {path}: "
+                           f"{(r.stdout + r.stderr).strip()[:300]}")
+    print(f"signed: {path}", flush=True)
 
 
 def save_progress(progress):
@@ -210,6 +237,11 @@ def main():
         f.write(json.dumps(snap, indent=1))
         f.write("\n")
     os.replace(tmpstamp, STAMP)
+    sign_artifact(MIRROR, f"D1 mirror refresh {snap['snapshot_utc']}: "
+                          f"{total} rows, {len(manifest)} tables, "
+                          f"drift={len(drift)}")
+    sign_artifact(STAMP, f"D1 mirror stamp {snap['snapshot_utc']}: "
+                         f"sha256 + counts for d1-mirror.db")
     print(f"mirror refreshed: {total} rows, {len(manifest)} tables, "
           f"drift={len(drift)}, stamp {STAMP}")
     return 0

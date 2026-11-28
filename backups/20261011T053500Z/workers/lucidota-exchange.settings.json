@@ -1,0 +1,24 @@
+{
+ "annotations": {
+  "workers/triggered_by": "upload"
+ },
+ "bindings": [
+  {
+   "database_id": "0ea89801-9b0a-4efa-9d2f-170d7d285e69",
+   "id": "0ea89801-9b0a-4efa-9d2f-170d7d285e69",
+   "name": "EXCHANGE_DB",
+   "type": "d1"
+  },
+  {
+   "name": "EXCHANGE_KEY",
+   "type": "secret_text"
+  }
+ ],
+ "compatibility_date": "2026-10-01",
+ "compatibility_flags": [],
+ "logpush": false,
+ "placement": {},
+ "tags": [],
+ "tail_consumers": [],
+ "usage_model": "standard"
+}

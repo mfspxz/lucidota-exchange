@@ -14,7 +14,7 @@
 
 use crate::db::{row_to_json, Db, DbError, Row, RowExt, Val};
 use crate::env::Env;
-use crate::observe::observe;
+use crate::observe::{auto_promote, demote_check, observe};
 use crate::policy::{cost_of, policy_version, taxonomy_of};
 use crate::util::{minutes_ago, now_iso, sha256hex, uid};
 use serde_json::{json, Value};
@@ -363,9 +363,22 @@ pub async fn complete_claimed(
     }
 
     // W9: requested vs actually-executed capacity.
+    // v0.7.0 EXACT-MODEL RULE: the requested model is the JOB's model
+    // first (the claim binds it), the resource config's model only as
+    // the unpinned default. A SUCCEEDED completion whose executed model
+    // differs from the requested model is a VERIFICATION_FAILURE
+    // (error_class MODEL_MISMATCH) — no silent substitution, ever.
+    // Failover-pool resources (config.model_exact === false) are exempt.
     let rconf: Value =
         serde_json::from_str(&resource.text_or("config", "{}")).unwrap_or(json!({}));
-    let requested_model = rconf.get("model").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let model_exact = rconf.get("model_exact") != Some(&Value::Bool(false));
+    let requested_model = spec
+        .get("input")
+        .and_then(|i| i.get("model"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| rconf.get("model").and_then(|v| v.as_str()).map(|s| s.to_string()));
     let actual_model = bs(b, "model_actual");
     let model_match: Option<i64> = match (&requested_model, &actual_model) {
         (Some(r), Some(a)) => Some(if r == a { 1 } else { 0 }),
@@ -387,12 +400,26 @@ pub async fn complete_claimed(
             ],
         )
         .await?;
+        db.exec(
+            "UPDATE model_capabilities SET last_error=? WHERE resource_id=? AND model=?",
+            &[
+                Val::from(format!(
+                    "model-mismatch: requested {}, executed {}",
+                    requested_model.clone().unwrap_or_default(),
+                    actual_model.clone().unwrap_or_default()
+                )),
+                Val::from(resource.text_or("id", "")),
+                Val::from(requested_model.clone().unwrap_or_default()),
+            ],
+        )
+        .await?;
     }
 
     // INV7: SUCCEEDED with empty content is not success.
     let mut verified = true;
     let mut verify_note: Option<String> = None;
     let mut output_hash: Option<String> = None;
+    let mut mismatch_failure = false;
     if succeeded {
         let output = b.get("output");
         let content = output.and_then(|o| o.get("content"));
@@ -430,7 +457,28 @@ pub async fn complete_claimed(
         } else {
             output_hash = Some(sha256hex(&serde_json::to_string(b.get("output").unwrap_or(&Value::Null)).unwrap_or_default()));
         }
+        // v0.7.0: exact-model verification. Content present but the
+        // WRONG model executed is not success — the requested work was
+        // not done.
+        if verified && model_match == Some(0) && model_exact {
+            verified = false;
+            mismatch_failure = true;
+            verify_note = Some(format!(
+                "model mismatch: requested {}, executed {} — exact model required, no substitution",
+                requested_model.clone().unwrap_or_default(),
+                actual_model.clone().unwrap_or_default()
+            ));
+        }
     }
+    // JS failClass: mismatch → MODEL_MISMATCH; other verification
+    // failures → VERIFICATION_FAILED; otherwise the worker's error_class.
+    let fail_class: Option<String> = if mismatch_failure {
+        Some("MODEL_MISMATCH".to_string())
+    } else if verify_note.is_some() {
+        Some("VERIFICATION_FAILED".to_string())
+    } else {
+        error_class.clone()
+    };
     let final_taxonomy = if succeeded {
         if verified { "ok" } else { "VERIFICATION_FAILURE" }
     } else {
@@ -480,9 +528,21 @@ pub async fn complete_claimed(
     let measured_cost = cost_of(&resource);
     let cost_basis = resource.text_or("cost_basis", "unknown");
     let accounting_id = uid("acct");
-    db.exec(
-        "INSERT INTO accounting (id,execution_id,claim_id,job_id,resource_id,measured_cost,cost_basis,quota_effect) VALUES (?,?,?,?,?,?,?,?)",
-        &[
+    // EXC-155 FIX (PIPE-EXCHANGE treatment, 2026-11-27): every write of
+    // the completion record — accounting, execution, lease, model
+    // stamps, job terminal state, the receipt, its ternary/ballot
+    // stamps, and the final claim flip — is collected here and lands as
+    // ONE atomic Db::batch at the end of this function. The previous
+    // sequential execs let a mid-path failure strand the completion in
+    // ambiguous half-states (receipt-without-completed-claim,
+    // job-done-with-no-receipt — fault-injection proven, waves 29–30).
+    // A failed batch now leaves the claim in 'completing' (the
+    // protocol's parked intermediate) with job and receipt untouched,
+    // and a retry replays cleanly.
+    let mut stmts: Vec<(String, Vec<Val>)> = Vec::new();
+    stmts.push((
+        "INSERT INTO accounting (id,execution_id,claim_id,job_id,resource_id,measured_cost,cost_basis,quota_effect) VALUES (?,?,?,?,?,?,?,?)".to_string(),
+        vec![
             Val::from(accounting_id),
             Val::from(ex.text_or("id", "")),
             Val::from(claim_id.clone()),
@@ -492,23 +552,21 @@ pub async fn complete_claimed(
             Val::from(cost_basis.clone()),
             Val::from(json!({ "quota_before": quota_before, "quota_after": quota_after }).to_string()),
         ],
-    )
-    .await?;
+    ));
 
     let usage_json = b
         .get("output")
         .and_then(|o| o.get("usage"))
         .map(|u| serde_json::to_string(u).unwrap_or_default());
     let err_text = bs(b, "error");
-    db.exec(
-        "UPDATE executions SET result=?, output_hash=?, error=?, error_class=?, failure_taxonomy=?, finished_at=?, requested_model=?, actual_model=?, model_match=?, usage_json=? WHERE id=?",
-        &[
+    stmts.push((
+        "UPDATE executions SET result=?, output_hash=?, error=?, error_class=?, failure_taxonomy=?, finished_at=?, requested_model=?, actual_model=?, model_match=?, usage_json=? WHERE id=?".to_string(),
+        vec![
             Val::from(if failed { "error" } else { "ok" }),
             output_hash.clone().map(Val::from).unwrap_or(Val::Null),
             failed.then(|| verify_note.clone().or(err_text.clone()).unwrap_or_default()).map(Val::from).unwrap_or(Val::Null),
             if failed {
-                if verify_note.is_some() { Val::from("VERIFICATION_FAILED") }
-                else { error_class.clone().map(Val::from).unwrap_or(Val::Null) }
+                fail_class.clone().map(Val::from).unwrap_or(Val::Null)
             } else { Val::Null },
             Val::from(final_taxonomy),
             Val::from(now_iso()),
@@ -518,13 +576,88 @@ pub async fn complete_claimed(
             usage_json.map(Val::from).unwrap_or(Val::Null),
             Val::from(ex.text_or("id", "")),
         ],
-    )
-    .await?;
-    db.exec(
-        "UPDATE leases SET state=? WHERE id=?",
-        &[Val::from(if failed { "released" } else { "consumed" }), Val::from(lease_id.clone())],
-    )
-    .await?;
+    ));
+    stmts.push((
+        "UPDATE leases SET state=? WHERE id=?".to_string(),
+        vec![Val::from(if failed { "released" } else { "consumed" }), Val::from(lease_id.clone())],
+    ));
+
+    // v0.7.0 per-model evidence: a proven execution stamps the model
+    // row (listed -> proven, per model, not just per resource). A dead
+    // model (claimant reported NOT_FOUND and refused without executing)
+    // is recorded; if it was the resource's named default model, the
+    // resource is demoted — it must not keep routing to a dead model.
+    if !failed {
+        if let Some(am) = &actual_model {
+            stmts.push((
+                "UPDATE model_capabilities SET last_executed_at=?, last_error=NULL WHERE resource_id=? AND model=?".to_string(),
+                vec![
+                    Val::from(now_iso()),
+                    Val::from(resource.text_or("id", "")),
+                    Val::from(am.clone()),
+                ],
+            ));
+        }
+    }
+    if !succeeded && error_class.as_deref() == Some("NOT_FOUND") {
+        if let Some(rm) = &requested_model {
+            stmts.push((
+                "UPDATE model_capabilities SET last_error=? WHERE resource_id=? AND model=?".to_string(),
+                vec![
+                    Val::from("model unavailable at provider (404/410) — claimant refused without executing"),
+                    Val::from(resource.text_or("id", "")),
+                    Val::from(rm.clone()),
+                ],
+            ));
+            stmts.push((
+                "INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)".to_string(),
+                vec![
+                    Val::from(resource.text_or("id", "")),
+                    Val::from(resource.text_or("evidence_state", "")),
+                    Val::from(resource.text_or("evidence_state", "")),
+                    Val::from("model-unavailable"),
+                    Val::from(format!(
+                        "model {} gone at provider (404/410); claimant refused, no substitution",
+                        rm
+                    )),
+                ],
+            ));
+            if rconf.get("model").and_then(|v| v.as_str()) == Some(rm.as_str()) {
+                // set_evidence(rid, "UNKNOWN", "model-unavailable", detail,
+                // force=true), inlined into the batch. `from` is the
+                // evidence_state on the resource row re-read above —
+                // nothing writes evidence_state between that read and
+                // here, so it matches set_evidence's own read exactly;
+                // from == "UNKNOWN" is set_evidence's no-op case.
+                let ev_from = resource
+                    .text("evidence_state")
+                    .unwrap_or_else(|| "UNKNOWN".to_string());
+                if ev_from != "UNKNOWN" {
+                    stmts.push((
+                        "UPDATE resources SET evidence_state=?, evidence_at=? WHERE id=?".to_string(),
+                        vec![
+                            Val::from("UNKNOWN"),
+                            Val::from(now_iso()),
+                            Val::from(resource.text_or("id", "")),
+                        ],
+                    ));
+                    stmts.push((
+                        "INSERT INTO evidence_log (resource_id,from_state,to_state,trigger,detail) VALUES (?,?,?,?,?)".to_string(),
+                        vec![
+                            Val::from(resource.text_or("id", "")),
+                            Val::from(ev_from),
+                            Val::from("UNKNOWN"),
+                            Val::from("model-unavailable"),
+                            Val::from(format!(
+                                "default model {} gone at provider — re-list before routing",
+                                rm
+                            )),
+                        ],
+                    ));
+                }
+            }
+        }
+    }
 
     // Terminal state.
     let defer_count = job.i64_or("defer_count", 0);
@@ -536,23 +669,43 @@ pub async fn complete_claimed(
     } else {
         "failed"
     };
-    if failed && state == "deferred" {
-        db.exec(
-            "UPDATE jobs SET defer_count=defer_count+1 WHERE id=?",
-            &[Val::from(job.text_or("id", ""))],
-        )
-        .await?;
+    // A1: governor-side ternary extraction. The value is computed here
+    // (pure, from the completion body); the receipt stamp itself is
+    // pushed into the atomic batch below, after the receipt INSERT.
+    let mut ternary_verdict: Option<i64> = None;
+    if !failed {
+        if let Some(tv) = b.get("output").and_then(|o| o.get("ternary_verdict")).and_then(|v| v.as_i64()) {
+            if tv == 1 || tv == 0 || tv == -1 {
+                ternary_verdict = Some(tv);
+            }
+        }
     }
-    db.exec(
-        "UPDATE jobs SET state=? WHERE id=?",
-        &[Val::from(state), Val::from(job.text_or("id", ""))],
-    )
-    .await?;
+    if failed && state == "deferred" {
+        stmts.push((
+            "UPDATE jobs SET defer_count=defer_count+1 WHERE id=?".to_string(),
+            vec![Val::from(job.text_or("id", ""))],
+        ));
+    }
+    stmts.push((
+        "UPDATE jobs SET state=? WHERE id=?".to_string(),
+        vec![Val::from(state), Val::from(job.text_or("id", ""))],
+    ));
 
+    // Lease snapshot for the receipt. Read before the batch lands, with
+    // the state field set to the value the batched leases UPDATE writes
+    // (the only column that update touches) — byte-identical to the
+    // post-update snapshot the sequential code recorded.
     let lease_snap = db
         .query_one("SELECT * FROM leases WHERE id=?", &[Val::from(lease_id.clone())])
         .await?
         .unwrap_or_default();
+    let mut lease_json = row_to_json(&lease_snap);
+    if let Some(obj) = lease_json.as_object_mut() {
+        obj.insert(
+            "state".to_string(),
+            Value::from(if failed { "released" } else { "consumed" }),
+        );
+    }
     let receipt_id = uid("rcpt");
     let policy_snapshot: Value =
         serde_json::from_str(&claim.text_or("policy_snapshot", "{}")).unwrap_or(json!({}));
@@ -582,18 +735,16 @@ pub async fn complete_claimed(
     let fallback_chain = json!([{
         "attempt": ex.text_or("id", ""), "claim": claim_id, "resource": resource.text_or("id", ""),
         "lease": lease_id, "executed": true, "taxonomy": final_taxonomy, "worker_outcome": outcome,
-        "error_class": if failed {
-            if verify_note.is_some() { Some("VERIFICATION_FAILED".to_string()) } else { error_class.clone() }
-        } else { None },
+        "error_class": if failed { fail_class.clone() } else { None },
         "error": if failed { verify_note.clone().or(err_text.clone()) } else { None },
     }]);
     let errors_text = if failed {
         Some(format!("{} [{}]: {}", resource.text_or("id", ""), final_taxonomy,
             verify_note.clone().or(err_text.clone()).unwrap_or_default()))
     } else { None };
-    db.exec(
-        "INSERT INTO receipts (id,job_id,execution_id,attempt_id,provider,resource,started_at,finished_at,input_hash,output_hash,result,cost,cost_before,cost_after,quota_before,quota_after,health_before,health_after,policy_version,lease,decision,fallback_chain,errors,claim_id,worker_outcome) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        &[
+    stmts.push((
+        "INSERT INTO receipts (id,job_id,execution_id,attempt_id,provider,resource,started_at,finished_at,input_hash,output_hash,result,cost,cost_before,cost_after,quota_before,quota_after,health_before,health_after,policy_version,lease,decision,fallback_chain,errors,claim_id,worker_outcome) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)".to_string(),
+        vec![
             Val::from(receipt_id.clone()),
             Val::from(job.text_or("id", "")),
             Val::from(ex.text_or("id", "")),
@@ -613,40 +764,79 @@ pub async fn complete_claimed(
             Val::from(health_before),
             Val::from(resource.text_or("state", "")),
             Val::from(policy_v.clone()),
-            Val::from(row_to_json(&lease_snap).to_string()),
+            Val::from(lease_json.to_string()),
             Val::from(decision.to_string()),
             Val::from(fallback_chain.to_string()),
             errors_text.map(Val::from).unwrap_or(Val::Null),
             Val::from(claim_id.clone()),
             Val::from(outcome.clone()),
         ],
-    )
-    .await?;
+    ));
 
-    // A1: governor-side ternary extraction.
-    let mut ternary_verdict: Option<i64> = None;
-    if !failed {
-        if let Some(tv) = b.get("output").and_then(|o| o.get("ternary_verdict")).and_then(|v| v.as_i64()) {
-            if tv == 1 || tv == 0 || tv == -1 {
-                ternary_verdict = Some(tv);
-                db.exec(
-                    "UPDATE receipts SET ternary_verdict=? WHERE id=?",
-                    &[Val::from(tv), Val::from(receipt_id.clone())],
-                )
-                .await?;
-            }
-        }
+    // A1: stamp the ternary verdict on the receipt (value computed
+    // above; this statement lands inside the atomic batch, directly
+    // after the receipt INSERT).
+    if let Some(tv) = ternary_verdict {
+        stmts.push((
+            "UPDATE receipts SET ternary_verdict=? WHERE id=?".to_string(),
+            vec![Val::from(tv), Val::from(receipt_id.clone())],
+        ));
     }
     // Voting A2: stamp ballot_id on ANY successful vote-job receipt.
     if !failed {
         if let Some(bid) = spec.get("ballot_id").and_then(|v| v.as_str()) {
-            db.exec(
-                "UPDATE receipts SET ballot_id=? WHERE id=?",
-                &[Val::from(bid.to_string()), Val::from(receipt_id.clone())],
-            )
-            .await?;
+            stmts.push((
+                "UPDATE receipts SET ballot_id=? WHERE id=?".to_string(),
+                vec![Val::from(bid.to_string()), Val::from(receipt_id.clone())],
+            ));
         }
     }
+    let summary = json!({
+        "job_id": job.text_or("id", ""), "state": state, "receipt_id": receipt_id,
+        "lease_id": lease_id, "claim_id": claim_id, "resource": resource.text_or("id", ""),
+        "taxonomy": final_taxonomy, "worker_outcome": outcome, "ternary_verdict": ternary_verdict,
+        "output": if !failed { b.get("output").cloned().unwrap_or(Value::Null) } else { Value::Null },
+        "error": if failed { verify_note.or(err_text).map(Value::from).unwrap_or(Value::Null) } else { Value::Null },
+    });
+    stmts.push((
+        "UPDATE claims SET status='completed', worker_outcome=?, completed_at=?, completion_summary=? WHERE claim_id=? AND status='completing'".to_string(),
+        vec![
+            Val::from(outcome.clone()),
+            Val::from(now_iso()),
+            Val::from(summary.to_string()),
+            Val::from(claim_id.clone()),
+        ],
+    ));
+    // EXC-155: the completion record commits atomically here — every
+    // statement pushed since ACCOUNTING lands, or none of it does.
+    db.batch(stmts).await?;
+
+    // ---- Post-commit side effects. In the sequential code these ran
+    // interleaved with the completion writes, so a failure inside one
+    // of them stranded the completion half-written. They now run after
+    // the atomic commit: a failure still surfaces as an error, but the
+    // completion record itself is whole (claim 'completed' + receipt +
+    // terminal job state), and a client retry replays the stored
+    // summary idempotently.
+
+    // EVENT-DRIVEN PROMOTION (Phase 3, 2026-11-20): evidence moves when
+    // evidence arrives. This completion just wrote its ok observation +
+    // executions row, so re-evaluate THIS resource's ladder inline —
+    // ~5 indexed COUNTs — instead of waiting for the */30 full-table scan.
+    // No-ops when nothing is warranted (set_evidence skips from==to).
+    // Promotion only on success; demotion applies on any terminal state
+    // (stale usable tiers must fall even when this run failed).
+    //
+    // governor-promotion-fix (2026-11-24): this block exists in worker.js
+    // completeClaimed but was dropped in the Rust port — completions wrote
+    // observations yet never re-evaluated the ladder, so a claimed resource
+    // could satisfy every rung and stay UNKNOWN forever (nim-nvidia,
+    // 2026-11-24). Restored verbatim to worker.js parity.
+    if !failed {
+        auto_promote(db, &resource.text_or("id", ""), None).await?;
+    }
+    demote_check(db, &resource.text_or("id", ""), None).await?;
+
     // A2: auto-prune on -1 (with distinct-eligible-worker corroboration).
     if ternary_verdict == Some(-1) {
         apply_disproof_prune(db, &job, &ex, &claim_id, worker, &policy_v).await?;
@@ -713,24 +903,6 @@ pub async fn complete_claimed(
             let _ = ev_state;
         }
     }
-
-    let summary = json!({
-        "job_id": job.text_or("id", ""), "state": state, "receipt_id": receipt_id,
-        "lease_id": lease_id, "claim_id": claim_id, "resource": resource.text_or("id", ""),
-        "taxonomy": final_taxonomy, "worker_outcome": outcome, "ternary_verdict": ternary_verdict,
-        "output": if !failed { b.get("output").cloned().unwrap_or(Value::Null) } else { Value::Null },
-        "error": if failed { verify_note.or(err_text).map(Value::from).unwrap_or(Value::Null) } else { Value::Null },
-    });
-    db.exec(
-        "UPDATE claims SET status='completed', worker_outcome=?, completed_at=?, completion_summary=? WHERE claim_id=? AND status='completing'",
-        &[
-            Val::from(outcome.clone()),
-            Val::from(now_iso()),
-            Val::from(summary.to_string()),
-            Val::from(claim_id.clone()),
-        ],
-    )
-    .await?;
 
     let mut out_map = summary.as_object().cloned().unwrap_or_default();
     out_map.insert("status".to_string(), Value::from(200));

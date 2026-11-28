@@ -1,0 +1,3 @@
+{"claim_transport_retry": "transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response"}
+{"completed": "job_proof073-nim-nvidia-inference-1", "claim_id": "claim_mwprhqjot14bee", "outcome": "SUCCEEDED", "model_requested": "google/gemma-4-31b-it", "model_used": "google/gemma-4-31b-it", "model_actual": "google/gemma-4-31b-it", "state": "done", "receipt_id": "rcpt_mwprhy0kspaf2v", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"}

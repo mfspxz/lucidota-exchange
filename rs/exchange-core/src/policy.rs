@@ -36,6 +36,12 @@ pub fn taxonomy_of(error_class: &str) -> &'static str {
         "AUTH_ERROR" => "AUTH_FAILURE",
         "NO_ADAPTER" => "CAPABILITY_FAILURE",
         "VERIFICATION_FAILED" => "VERIFICATION_FAILURE",
+        // v0.7.3: the v0.7.0 error classes are permanent by definition —
+        // the model is gone (NOT_FOUND), the request is malformed
+        // (BAD_REQUEST), or the delegation disagreed with the job
+        // (MODEL_MISMATCH — a verification failure, same as model_match=0).
+        "NOT_FOUND" | "BAD_REQUEST" => "PERMANENT_FAILURE",
+        "MODEL_MISMATCH" => "VERIFICATION_FAILURE",
         _ => "RETRYABLE_FAILURE",
     }
 }
@@ -62,6 +68,9 @@ mod tests {
         assert_eq!(taxonomy_of("AUTH_ERROR"), "AUTH_FAILURE");
         assert_eq!(taxonomy_of("NO_ADAPTER"), "CAPABILITY_FAILURE");
         assert_eq!(taxonomy_of("VERIFICATION_FAILED"), "VERIFICATION_FAILURE");
+        assert_eq!(taxonomy_of("NOT_FOUND"), "PERMANENT_FAILURE");
+        assert_eq!(taxonomy_of("BAD_REQUEST"), "PERMANENT_FAILURE");
+        assert_eq!(taxonomy_of("MODEL_MISMATCH"), "VERIFICATION_FAILURE");
         assert_eq!(taxonomy_of("SOMETHING_ELSE"), "RETRYABLE_FAILURE");
     }
 }

@@ -1,0 +1,3 @@
+{"claim_transport_retry": "transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response"}
+{"completed": "job_proof073-cerebras-inference-1", "claim_id": "claim_mwpriirxdy169l", "outcome": "SUCCEEDED", "model_requested": "qwen-3.8-27b", "model_used": "qwen-3.8-27b", "model_actual": "qwen-3.8-27b", "state": "done", "receipt_id": "rcpt_mwprimny7oddj0", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cerebras", "provider": "cerebras", "worker": "nim-claimant-01"}

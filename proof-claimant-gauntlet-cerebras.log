@@ -1,0 +1,2 @@
+{"completed": "job_mwpre2erb5wb9i", "claim_id": "claim_mwpre9l6ra0vzb", "outcome": "SUCCEEDED", "model_requested": "qwen-3.8-27b", "model_used": "qwen-3.8-27b", "model_actual": "qwen-3.8-27b", "state": "done", "receipt_id": "rcpt_mwpreehk3ixwin", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cerebras", "provider": "cerebras", "worker": "nim-claimant-01"}

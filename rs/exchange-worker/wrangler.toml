@@ -1,0 +1,29 @@
+# lucidota-exchange — Rust (workers-rs) build of the Exchange worker.
+#
+# This config packages exchange-worker (crate-type cdylib) via
+# worker-build into build/worker/shim.mjs + build/worker/index.wasm.
+# It is the flip candidate for the production wrangler.toml in
+# ~/workspace/exchange/ (which still points at worker.js v0.7.3).
+# DO NOT deploy from here until the flip procedure in
+# ~/workspace/exchange/FLIP-READINESS-2026-11-22.md §7 is executed.
+#
+# Bindings are IDENTICAL to production: D1 EXCHANGE_DB (same database),
+# cron */30, no KV. Secrets are NOT declared here — they are set with
+# `wrangler secret put` (or the API) exactly as in production:
+#   EXCHANGE_KEY — Bearer for all /v1/* routes. Missing = 503 fail-closed.
+#   PL_SIG_KEY   — envelope authority key (lucidota-receipt/1).
+name = "lucidota-exchange"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-10-01"
+account_id = "243aabef9144fd3b8dd334cb19319e75"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[[d1_databases]]
+binding = "EXCHANGE_DB"
+database_name = "exchange"
+database_id = "0ea89801-9b0a-4efa-9d2f-170d7d285e69"
+
+[triggers]
+crons = ["*/30 * * * *"]

@@ -1,0 +1,130 @@
+D1-BURN-FIX-A3 — production worker.js patch (worklist A3, 2026-11-22)
+Status: READY TO APPLY — NOT APPLIED. No deploy is authorized by this file.
+Target: ~/workspace/exchange/worker.js (VERSION 0.7.3, 3,479 lines)
+Apply with:  cd ~/workspace/exchange && patch -p0 < D1-BURN-FIX-A3.worker-js.patch
+         or:  git apply (if run inside a repo checkout of the file)
+
+WHAT IT FIXES (measured, see D1-BURN-FIX-A3.md):
+ensureMigrated() runs the full migrate() once per isolate. migrate() is
+~84 statements (47 PRAGMA table_info via ensure(), ~31 CREATE ... IF NOT
+EXISTS, assorted checks) and ends with an UNINDEXED COUNT over the
+append-only evidence_log — a 3,156-row full scan (measured rows_read=3156
+via cf.py d1q, 2026-11-23) paid to rediscover that a one-time 2026
+backfill finished long ago. Claimant polling is sparse (~540 requests/h),
+so isolates churn: fitting the measured D1 analytics on both axes
+(read queries/hour AND rows read/hour) puts the cold-isolate share at
+~1/3 of requests on 2026-11-22 and ~2/3 on 2026-11-23. That is the burn:
+~1.0-1.1M rows/hour against a 5M/day free tier.
+
+THE FIX, three hunks, no behavior change:
+1. ensureMigrated() gates on ONE primary-key lookup
+   (exchange_config.schema_epoch, 1 row) before paying for migrate().
+   migrate() stamps the epoch when it completes. Any schema change MUST
+   bump SCHEMA_EPOCH — the constant sits next to ensureMigrated with a
+   comment saying so. Fail-open toward migrate(): an unreadable marker
+   (e.g. a pre-v0.7 database with no exchange_config table) runs the
+   full migrate, exactly as today.
+2. Inside migrate(), the backfill check stops scanning evidence_log:
+   a marker row in exchange_config (PK read) replaces the COUNT. The
+   COUNT runs at most once more — on the first migrate after this
+   lands — and writes the marker either way.
+3. migrate() gains idx_evidence_log_trigger so any future trigger scan
+   (audits, forensics) is indexed instead of a full table scan.
+
+EXPECTED EFFECT (at 2026-11-22/23 traffic):
+cold-isolate cost falls from ~84 read queries / ~3,157 rows to
+2 read queries / 2 rows (epoch lookup + ballot_policy check inside
+migrate is skipped too — migrate does not run at all). Projected daily
+rows read: ~5.0-5.7M -> ~0.3-0.5M (claim path ~34 rows/poll, cron
+~4-8k rows/run, completions + gauntlets), i.e. ~10x under the free cap.
+
+NOT IN THIS PATCH (deliberate):
+- warrantedTierInfo's lifetime COUNTs (execOk / freeExec). They cost
+  ~1,789 rows for nim-nvidia per computation and grow with history, but
+  windowing them changes evidence semantics — that is the deep-dive G4
+  decision, Zack's call, not a burn patch's.
+- /v1/health COUNT(*) scans (709 rows/call). Low call frequency; not
+  the burner. Left alone to keep this patch minimal and reviewable.
+
+--- worker.js
++++ worker.js (A3 patched)
+@@ -627,6 +627,9 @@
+   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_resource ON leases (resource_id)`).run();
+   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_resources_provider ON resources (provider_id)`).run();
+   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_state_created ON leases (state, created_at)`).run();
++  // A3 (2026-11-22, D1 burn): evidence_log is append-only and had NO
++  // index; the backfill check below full-scanned it on every migrate().
++  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_evidence_log_trigger ON evidence_log (trigger)`).run();
+   // v0.7.0 (2026-11-20, Zack: ALL capabilities of EVERY key + knobs/dials):
+   // model_capabilities — one row per (resource, model) from the live
+   // /models enumeration (capability-enumeration-2026-11-20.json). A listing
+@@ -656,8 +659,24 @@
+     key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`).run();
+   await db.prepare("INSERT OR IGNORE INTO exchange_config (key,value,updated_at) VALUES ('allow_paid','0',?)")
+     .bind(now()).run();
+-  const done = await db.prepare("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'").first();
+-  if (!done || done.c === 0) await backfillEvidence(db);
++  // A3 (2026-11-22, D1 burn): the backfill check was an unindexed COUNT
++  // over the append-only evidence_log — a full scan (3,156 rows at
++  // measurement, growing daily) paid by every migrate() run to
++  // rediscover a one-time backfill that finished long ago. The marker
++  // now lives in exchange_config (PK read, 1 row). The COUNT below runs
++  // at most once more — on the first migrate after this lands — and
++  // writes the marker whether or not the backfill had to run.
++  let bfDone = null;
++  try {
++    const m = await db.prepare("SELECT value FROM exchange_config WHERE key='backfill_v03_done'").first();
++    bfDone = m && m.value;
++  } catch { bfDone = null; }
++  if (bfDone !== "1") {
++    const done = await db.prepare("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'").first();
++    if (!done || done.c === 0) await backfillEvidence(db);
++    await db.prepare("INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('backfill_v03_done','1',?)")
++      .bind(now()).run();
++  }
+ }
+ 
+ // One-time honest backfill: derive evidence tiers from actual observations,
+@@ -2489,10 +2508,41 @@
+ // assigns the migrate promise SYNCHRONOUSLY before the first await, so all
+ // concurrent requests share one migration. On failure the guard resets so
+ // the next request retries instead of sticking on a rejected promise.
++// A3 (2026-11-22, D1 burn): SCHEMA_EPOCH is the contract between
++// ensureMigrated() and migrate(). Bump it in the SAME commit as ANY
++// schema change inside migrate() (new ensure() column, new CREATE
++// TABLE/INDEX, new seed row). If it is not bumped, warm databases will
++// skip the migrate that would have applied the change — silently.
++// The Rust port (rs/exchange-core/src/migrate.rs) shares this epoch
++// string and the exchange_config marker keys; keep all three in sync.
++const SCHEMA_EPOCH = "v0.7.3-a3-1";
++
+ let __migrating = null;
+ async function ensureMigrated(db) {
+   if (!__migrating) {
+-    __migrating = migrate(db).then(
++    __migrating = (async () => {
++      // A3 (2026-11-22, D1 burn): the full migrate() costs ~84
++      // statements and (before the marker fix) ended in a 3,156-row
++      // scan of evidence_log. It ran on every cold isolate; claimant
++      // polling is sparse (~540 req/h), so isolate churn made it the
++      // dominant D1 read burn — the v0.6.13 per-isolate guard only
++      // helps isolates that live long enough to be reused. Gate on
++      // ONE primary-key lookup first: 1 read query, 1 row. Full
++      // migrate runs only when the stored epoch is stale or
++      // unreadable (pre-v0.7 databases have no exchange_config table;
++      // the throw lands here and migrate creates it, as today).
++      let epoch = null;
++      try {
++        const row = await db.prepare("SELECT value FROM exchange_config WHERE key='schema_epoch'").first();
++        epoch = row && row.value;
++      } catch { epoch = null; }
++      if (epoch !== SCHEMA_EPOCH) {
++        await migrate(db);
++        await db.prepare("INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('schema_epoch',?,?)")
++          .bind(SCHEMA_EPOCH, now()).run();
++      }
++      return true;
++    })().then(
+       () => true,
+       (e) => { __migrating = null; throw e; }
+     );

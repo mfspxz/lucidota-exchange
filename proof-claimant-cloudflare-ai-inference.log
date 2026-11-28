@@ -1,0 +1,2 @@
+{"completed": "job_proof073-cloudflare-ai-inference-1", "claim_id": "claim_mwprk35yld3827", "outcome": "SUCCEEDED", "model_requested": "@cf/google/gemma-4-26b-a4b-it", "model_used": "@cf/google/gemma-4-26b-a4b-it", "model_actual": "@cf/google/gemma-4-26b-a4b-it", "state": "done", "receipt_id": "rcpt_mwprk7uxien87u", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}

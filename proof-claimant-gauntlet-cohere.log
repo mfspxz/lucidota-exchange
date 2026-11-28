@@ -1,0 +1,2 @@
+{"completed": "job_mwprfbbfc19dts", "claim_id": "claim_mwprfhxnmyjtkd", "outcome": "SUCCEEDED", "model_requested": "command-r7b-12-2024", "model_used": "command-r7b-12-2024", "model_actual": "command-r7b-12-2024", "state": "done", "receipt_id": "rcpt_mwprfkap4xcwtl", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"}

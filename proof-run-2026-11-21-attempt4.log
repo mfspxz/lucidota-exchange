@@ -1,0 +1,59 @@
+[FAIL] health: 0.7.2 ok=True resources=42 capabilities=656 keys=11
+[PASS] capabilities-list: total=656 usable=112 proven=6
+[PASS] config-list: keys=11 allow_paid=0
+[PASS] zen-preflight: DOWN (skip zen gauntlet + proof)
+[PASS] gauntlet-groq: job job_mwpqsjg03wmdcz state=done receipt=rcpt_mwpqssgchzfdro result=ok model_match=1 evidence=AVAILABLE claimant_rc=0
+[PASS] gauntlet-cerebras: job job_mwpqt6sp5dtctq state=done receipt=rcpt_mwpqth5klq6jeb result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[PASS] gauntlet-mistral: job job_mwpqtuvfwojabh state=done receipt=rcpt_mwpqu5hiyq315z result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[PASS] gauntlet-cohere: job job_mwpqufjacpam77 state=done receipt=rcpt_mwpqujgcbxaieb result=ok model_match=1 evidence=VERIFIED claimant_rc=0
+[FAIL] gauntlet-openrouter: job job_mwpqv2lapr1l6w state=deferred receipt=rcpt_mwpqvy8e5b7jdw result=deferred model_match=None evidence=DISCOVERED claimant_rc=0 | claimant out: ": 200, "error": "{'message': 'Provider returned error', 'code': 504, 'metadata': {'raw': 'error code: 504\\n', 'provider_name': 'Liquid', 'is_byok': False}}"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"} err: 
+[PASS] gauntlet-cloudflare-ai: job job_mwpqxgdezl0uli state=done receipt=rcpt_mwpqy6pmu45c6k result=ok model_match=1 evidence=AVAILABLE claimant_rc=0
+[PASS] gauntlet-ai-router: job job_mwpqyci7v1oxp9 state=done receipt=rcpt_mwpqyl342vl8lt result=ok model_match=0 evidence=VERIFIED claimant_rc=0
+[PASS] proof-nim-nvidia: job job_proof072-nim-nvidia-inference-1 state=done receipt=rcpt_mwpqza73wihrh3 result=ok requested=google/gemma-4-31b-it actual=google/gemma-4-31b-it model_match=1
+[PASS] proof-groq: job job_proof072-groq-inference-1 state=done receipt=rcpt_mwpqzr40k3dzxm result=ok requested=qwen/qwen3.8-27b actual=qwen/qwen3.8-27b model_match=1
+[PASS] proof-cerebras: job job_proof072-cerebras-inference-1 state=done receipt=rcpt_mwpr02jm4mgyud result=ok requested=qwen-3.8-27b actual=qwen-3.8-27b model_match=1
+[PASS] proof-mistral: job job_proof072-mistral-inference-1 state=done receipt=rcpt_mwpr0aw585i70h result=ok requested=ministral-14b-latest actual=ministral-14b-latest model_match=1
+[FAIL] proof-cohere: job job_proof072-cohere-inference-1 state=deferred receipt=rcpt_mwpr0hkpq1dppj result=deferred requested=None actual=None model_match=None | claimant out: mote end closed connection without response"}
+{"claim_error": "transport failed after 2 attempts: RemoteDisconnected: Remote end closed connection without response", "http": 0}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"} err: 
+[FAIL] proof-openrouter: skipped — evidence_state=DISCOVERED; pinned job would refuse at EVIDENCE
+[PASS] proof-cloudflare-ai: job job_proof072-cloudflare-ai-inference-1 state=done receipt=rcpt_mwpr1lz9mybexa result=ok requested=@cf/google/gemma-4-26b-a4b-it actual=@cf/google/gemma-4-26b-a4b-it model_match=1
+[FAIL] proof-emb-nim-nvidia: job job_proof072-nim-nvidia-embedding-1 state=deferred receipt=rcpt_mwpr2azhwgmwto result=deferred requested=nvidia/embed-qa-4 actual=None model_match=None | claimant out: a-4", "model_actual": null, "state": "deferred", "receipt_id": "rcpt_mwpr2azhwgmwto", "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "http 404"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"} err: 
+[FAIL] proof-emb-cloudflare-ai: job job_proof072-cloudflare-ai-embedding-1 state=deferred receipt=rcpt_mwpr3kmauiddci result=deferred requested=@cf/baai/bge-base-en-v1.5 actual=None model_match=None | claimant out:  "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "IncompleteRead: IncompleteRead(6266 bytes read, 8197 more expected)"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err: 
+[PASS] refuse-nonexistent-model: state=deferred receipt=rcpt_mwpr4w1nxob8nr MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)'), ('cerebras', 'model no-such-model-xyz not listed for cerebras'), ('cloudflare-ai', 'model no-such-model-xyz not listed for cloudflare-ai'), ('cohere', 'model no-such-model-xyz not listed for cohere'), ('groq', 'model no-such-model-xyz not listed for groq'), ('lane-pollinations', 'resource serves openai, not no-such-model-xyz'), ('mistral', 'model no-such-model-xyz not listed for mistral'), ('nim-nvidia', 'model no-such-model-xyz not listed for nim-nvidia')] executions=0 claims=0
+[PASS] refuse-mistral-paid: state=deferred receipt=rcpt_mwpr4y3pdkrg65 COST-rejections=[('mistral', 'model codestral-2508 is paid and global allow_paid=0 (spend decision required)')] executions=0 claims=0
+[PASS] refuse-deepseek-unproven: state=deferred receipt=None EVIDENCE-rejections=[('deepseek', 'evidence_state=DISCOVERED — not verified usable capacity')] executions=0 claims=0
+[PASS] refuse-friendli-unproven: state=deferred receipt=rcpt_mwpr580w0wbsjh EVIDENCE-rejections=[('friendli', 'evidence_state=DISCOVERED — not verified usable capacity')] executions=0 claims=0
+[PASS] refuse-pinned-failover-pool: state=deferred receipt=None MODEL-rejections=[('ai-router', 'failover pool cannot serve a pinned model (model_exact=false)')] executions=0 claims=0
+[PASS] verify2-groq: job job_mwpr5jb7kcnasx state=done receipt=rcpt_mwpr5n1mpu63s8 result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED
+[FAIL] verify2-cerebras: verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'} | evidence=VERIFIED
+[PASS] verify2-mistral: job job_mwpr5tcp7uhsly state=done receipt=rcpt_mwpr5yh2rzoutw result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED
+[PASS] verify2-cohere: job job_mwpr67yik0ytia state=done receipt=rcpt_mwpr6dfipmhi6o result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED
+[PASS] verify2-cloudflare-ai: job job_mwpr6hdh79tow2 state=done receipt=rcpt_mwpr6yh93jj6p5 result=ok model_match=1 evidence=VERIFIED claimant_rc=0 | evidence=VERIFIED
+[PASS] final-usable: usable=124
+
+24/31 steps passed; wrote /home/hatch/workspace/exchange/proof-results-2026-11-21.json
+FAILURES:
+  - health: 0.7.2 ok=True resources=42 capabilities=656 keys=11
+  - gauntlet-openrouter: job job_mwpqv2lapr1l6w state=deferred receipt=rcpt_mwpqvy8e5b7jdw result=deferred model_match=None evidence=DISCOVERED claimant_rc=0 | claimant out: ": 200, "error": "{'message': 'Provider returned error', 'code': 504, 'metadata': {'raw': 'error code: 504\\n', 'provider_name': 'Liquid', 'is_byok': False}}"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "openrouter", "provider": "openrouter", "worker": "nim-claimant-01"} err: 
+  - proof-cohere: job job_proof072-cohere-inference-1 state=deferred receipt=rcpt_mwpr0hkpq1dppj result=deferred requested=None actual=None model_match=None | claimant out: mote end closed connection without response"}
+{"claim_error": "transport failed after 2 attempts: RemoteDisconnected: Remote end closed connection without response", "http": 0}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cohere", "provider": "cohere", "worker": "nim-claimant-01"} err: 
+  - proof-openrouter: skipped
+  - proof-emb-nim-nvidia: job job_proof072-nim-nvidia-embedding-1 state=deferred receipt=rcpt_mwpr2azhwgmwto result=deferred requested=nvidia/embed-qa-4 actual=None model_match=None | claimant out: a-4", "model_actual": null, "state": "deferred", "receipt_id": "rcpt_mwpr2azhwgmwto", "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "http 404"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "nim-nvidia", "provider": "nim", "worker": "nim-claimant-01"} err: 
+  - proof-emb-cloudflare-ai: job job_proof072-cloudflare-ai-embedding-1 state=deferred receipt=rcpt_mwpr3kmauiddci result=deferred requested=@cf/baai/bge-base-en-v1.5 actual=None model_match=None | claimant out:  "taxonomy": "RETRYABLE_FAILURE", "idempotent": false, "http": 200, "error": "IncompleteRead: IncompleteRead(6266 bytes read, 8197 more expected)"}
+{"drained": 1, "cap": 3, "idle": false, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"}
+{"drained": 0, "cap": 3, "idle": true, "resource": "cloudflare-ai", "provider": "cloudflare-ai", "worker": "nim-claimant-01"} err: 
+  - verify2-cerebras: verify call failed: {'error': 'transport failed after 1 attempts: RemoteDisconnected: Remote end closed connection without response'} | evidence=VERIFIED

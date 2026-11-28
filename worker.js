@@ -627,6 +627,9 @@ async function migrate(db) {
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_resource ON leases (resource_id)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_resources_provider ON resources (provider_id)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_leases_state_created ON leases (state, created_at)`).run();
+  // A3 (2026-11-22, D1 burn): evidence_log is append-only and had NO
+  // index; the backfill check below full-scanned it on every migrate().
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_evidence_log_trigger ON evidence_log (trigger)`).run();
   // v0.7.0 (2026-11-20, Zack: ALL capabilities of EVERY key + knobs/dials):
   // model_capabilities — one row per (resource, model) from the live
   // /models enumeration (capability-enumeration-2026-11-20.json). A listing
@@ -656,8 +659,24 @@ async function migrate(db) {
     key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`).run();
   await db.prepare("INSERT OR IGNORE INTO exchange_config (key,value,updated_at) VALUES ('allow_paid','0',?)")
     .bind(now()).run();
-  const done = await db.prepare("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'").first();
-  if (!done || done.c === 0) await backfillEvidence(db);
+  // A3 (2026-11-22, D1 burn): the backfill check was an unindexed COUNT
+  // over the append-only evidence_log — a full scan (3,156 rows at
+  // measurement, growing daily) paid by every migrate() run to
+  // rediscover a one-time backfill that finished long ago. The marker
+  // now lives in exchange_config (PK read, 1 row). The COUNT below runs
+  // at most once more — on the first migrate after this lands — and
+  // writes the marker whether or not the backfill had to run.
+  let bfDone = null;
+  try {
+    const m = await db.prepare("SELECT value FROM exchange_config WHERE key='backfill_v03_done'").first();
+    bfDone = m && m.value;
+  } catch { bfDone = null; }
+  if (bfDone !== "1") {
+    const done = await db.prepare("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'").first();
+    if (!done || done.c === 0) await backfillEvidence(db);
+    await db.prepare("INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('backfill_v03_done','1',?)")
+      .bind(now()).run();
+  }
 }
 
 // One-time honest backfill: derive evidence tiers from actual observations,
@@ -2489,10 +2508,41 @@ async function runJob(db, job_id, spec, env, opts) {
 // assigns the migrate promise SYNCHRONOUSLY before the first await, so all
 // concurrent requests share one migration. On failure the guard resets so
 // the next request retries instead of sticking on a rejected promise.
+// A3 (2026-11-22, D1 burn): SCHEMA_EPOCH is the contract between
+// ensureMigrated() and migrate(). Bump it in the SAME commit as ANY
+// schema change inside migrate() (new ensure() column, new CREATE
+// TABLE/INDEX, new seed row). If it is not bumped, warm databases will
+// skip the migrate that would have applied the change — silently.
+// The Rust port (rs/exchange-core/src/migrate.rs) shares this epoch
+// string and the exchange_config marker keys; keep all three in sync.
+const SCHEMA_EPOCH = "v0.7.3-a3-1";
+
 let __migrating = null;
 async function ensureMigrated(db) {
   if (!__migrating) {
-    __migrating = migrate(db).then(
+    __migrating = (async () => {
+      // A3 (2026-11-22, D1 burn): the full migrate() costs ~84
+      // statements and (before the marker fix) ended in a 3,156-row
+      // scan of evidence_log. It ran on every cold isolate; claimant
+      // polling is sparse (~540 req/h), so isolate churn made it the
+      // dominant D1 read burn — the v0.6.13 per-isolate guard only
+      // helps isolates that live long enough to be reused. Gate on
+      // ONE primary-key lookup first: 1 read query, 1 row. Full
+      // migrate runs only when the stored epoch is stale or
+      // unreadable (pre-v0.7 databases have no exchange_config table;
+      // the throw lands here and migrate creates it, as today).
+      let epoch = null;
+      try {
+        const row = await db.prepare("SELECT value FROM exchange_config WHERE key='schema_epoch'").first();
+        epoch = row && row.value;
+      } catch { epoch = null; }
+      if (epoch !== SCHEMA_EPOCH) {
+        await migrate(db);
+        await db.prepare("INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('schema_epoch',?,?)")
+          .bind(SCHEMA_EPOCH, now()).run();
+      }
+      return true;
+    })().then(
       () => true,
       (e) => { __migrating = null; throw e; }
     );

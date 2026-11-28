@@ -6,7 +6,7 @@
 
 use async_trait::async_trait;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 /// Minimal HTTP surface the adapters need.
 #[async_trait(?Send)]
@@ -28,6 +28,20 @@ pub struct Env {
     /// Provider secrets by name (e.g. "NVIDIA_API_KEY").
     pub secrets: HashMap<String, String>,
     pub http: Arc<dyn HttpClient>,
+    /// In-memory replay seal set — the read-free fast path in front of the
+    /// durable `seal_registry` table (seal → first_seen epoch ms).
+    ///
+    /// `None` (production hosts) → routes use the process-global set in
+    /// `routes`. On Cloudflare Workers each isolate has its own statics,
+    /// so the global IS per-isolate there and behavior is unchanged.
+    ///
+    /// `Some(fresh set)` is the test-only isolation path: each test Env
+    /// carries its own registry, so parallel tests in one binary never
+    /// share replay state. With the shared global, two tests minting
+    /// identical envelopes in the same millisecond produced identical
+    /// seals and false 409 replays in each other's runs (the
+    /// torture_complete / torture_prune flake, characterized 2026-11-22).
+    pub seen_seals: Option<Arc<Mutex<HashMap<String, i64>>>>,
 }
 
 impl Env {

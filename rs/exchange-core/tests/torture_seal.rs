@@ -98,8 +98,9 @@ async fn s1_ttl_readmission_by_design() {
     // Run the cron prune (public in the observe module).
     exchange_core::observe::prune_seal_registry(&db).await.unwrap();
     // Fresh isolate: clear the in-memory seal set (each WASM isolate has its
-    // own statics in production; the test simulates this).
-    exchange_core::routes::clear_seen_seals_for_test();
+    // own statics in production; the test simulates this on its own Env's
+    // isolated registry).
+    exchange_core::routes::clear_seen_seals_for_test(&env);
     let r3 = observe(&db, &env, env1).await;
     assert_eq!(r3.status, 200, "TTL-expired seal re-admitted by design: {:?}", r3.body);
 }

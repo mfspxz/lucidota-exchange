@@ -1,0 +1,2 @@
+{"completed": "job_mwpr5jb7kcnasx", "claim_id": "claim_mwpr5lblxadqlo", "outcome": "SUCCEEDED", "model_requested": "qwen/qwen3.8-27b", "model_used": "qwen/qwen3.8-27b", "model_actual": "qwen/qwen3.8-27b", "state": "done", "receipt_id": "rcpt_mwpr5n1mpu63s8", "taxonomy": "ok", "idempotent": false, "http": 200, "error": null}
+{"drained": 1, "cap": 3, "idle": false, "resource": "groq", "provider": "groq", "worker": "nim-claimant-01"}

@@ -1,0 +1,170 @@
+D1-BURN-FIX-A3 — Rust port patch (worklist A3, 2026-11-22)
+Status: READY TO APPLY — NOT APPLIED. No deploy is authorized by this file.
+Targets: ~/workspace/exchange/rs/exchange-core/src/migrate.rs
+         ~/workspace/exchange/rs/exchange-core/src/routes.rs
+Apply with:  cd ~/workspace/exchange/rs && patch -p0 < ../D1-BURN-FIX-A3.rust.patch
+             (adjust -p strip to your checkout layout; hunks are small
+             and anchored on unique context lines)
+
+WHY THIS ONE IS FLIP-CRITICAL:
+The JS production worker at least guards migrate() behind a per-isolate
+promise (ensureMigrated). The Rust port has NO guard: routes.rs
+handle_inner calls migrate(db) unconditionally on EVERY request
+(routes.rs:314), and scheduled() does the same (routes.rs:1891).
+migrate() is the same ~84-statement port, ending in the same unindexed
+evidence_log COUNT (migrate.rs:247) that measured rows_read=3,156
+against production D1. Flipping to the Rust port as-is makes the burn
+strictly worse: every one of the ~540 requests/hour would pay the full
+~3,157 rows, ~1.7M rows/hour, free tier gone by ~03:00Z. This patch is
+therefore a PRE-FLIP requirement, not a follow-up.
+
+THE FIX mirrors the worker.js patch exactly — same marker keys, same
+SCHEMA_EPOCH string ("v0.7.3-a3-1") — because during the flip both
+implementations share one D1 and must agree on the epoch:
+1. New ensure_migrated() in migrate.rs: per-isolate AtomicBool fast
+   path; otherwise ONE primary-key lookup
+   (exchange_config.schema_epoch, 1 row); full migrate() only when the
+   epoch is stale or unreadable; migrate() completion stamps the
+   epoch. Errors propagate exactly as migrate() errors do today
+   (handle() turns them into the 500 "exchange fault" response) and
+   SCHEMA_OK is set only on success, so the next request retries —
+   the JS __migrating reset semantics.
+2. routes.rs: both call sites use ensure_migrated().
+3. Inside migrate(): the backfill check reads the backfill_v03_done
+   marker (PK, 1 row) instead of COUNTing evidence_log; the COUNT
+   runs at most once more and writes the marker either way.
+4. migrate() gains idx_evidence_log_trigger (same as the JS patch).
+
+EXPECTED EFFECT: identical to the JS patch — cold-start cost per
+isolate falls from ~84 read queries / ~3,157 rows to 2 / 2, warm
+requests pay 0. Projected daily rows read ~0.3-0.5M at current
+traffic, ~10x under the 5M free cap.
+
+--- exchange-core/src/migrate.rs
++++ exchange-core/src/migrate.rs (A3 patched)
+@@ -9,6 +9,52 @@
+ use crate::util::{minutes_ago, now_iso};
+ use serde_json::{json, Value};
+ 
++/// A3 (2026-11-22, D1 burn): SCHEMA_EPOCH is the contract between
++/// ensure_migrated() and migrate(). Bump it in the SAME commit as ANY
++/// schema change inside migrate(). The JS production worker
++/// (~/workspace/exchange/worker.js) shares this epoch string and the
++/// exchange_config marker keys — during the flip both implementations
++/// run against one D1 and must agree, so keep all three in sync.
++pub const SCHEMA_EPOCH: &str = "v0.7.3-a3-1";
++
++static SCHEMA_OK: std::sync::atomic::AtomicBool =
++    std::sync::atomic::AtomicBool::new(false);
++
++/// ensure_migrated: the burn-safe replacement for calling migrate()
++/// on every request. migrate() costs ~84 statements and (before the
++/// marker fix below) ended in a 3,156-row scan of the append-only
++/// evidence_log. Claimant polling is sparse (~540 req/h), so worker
++/// isolates churn and a per-request or per-cold-isolate migrate is
++/// the dominant D1 read burn (D1-BURN-FIX-A3.md). Gate on ONE
++/// primary-key lookup; run the full migrate only when the stored
++/// epoch is stale or unreadable (a pre-v0.7 database has no
++/// exchange_config table — the query errors and migrate creates it,
++/// exactly as an unconditional migrate would). SCHEMA_OK is set only
++/// on success, so a failed migrate is retried by the next request —
++/// the JS __migrating reset semantics.
++pub async fn ensure_migrated(db: &dyn Db) -> Result<(), DbError> {
++    use std::sync::atomic::Ordering;
++    if SCHEMA_OK.load(Ordering::Relaxed) {
++        return Ok(());
++    }
++    let epoch = db
++        .query_one("SELECT value FROM exchange_config WHERE key='schema_epoch'", &[])
++        .await
++        .ok()
++        .flatten()
++        .map(|r| r.text_or("value", ""));
++    if epoch.as_deref() != Some(SCHEMA_EPOCH) {
++        migrate(db).await?;
++        db.exec(
++            "INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('schema_epoch',?,?)",
++            &[Val::from(SCHEMA_EPOCH), Val::from(now_iso())],
++        )
++        .await?;
++    }
++    SCHEMA_OK.store(true, Ordering::Relaxed);
++    Ok(())
++}
++
+ async fn cols_of(db: &dyn Db, t: &str) -> Result<std::collections::HashSet<String>, DbError> {
+     let rows = db.query_all(&format!("PRAGMA table_info({})", t), &[]).await?;
+     Ok(rows.iter().map(|c| c.text_or("name", "")).collect())
+@@ -243,11 +289,37 @@
+         &[Val::from(now_iso())],
+     )
+     .await?;
+-    let done = db
+-        .query_one("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'", &[])
++    // A3 (2026-11-22, D1 burn): evidence_log is append-only and had
++    // NO index; the backfill COUNT full-scanned it on every migrate().
++    db.exec(
++        "CREATE INDEX IF NOT EXISTS idx_evidence_log_trigger ON evidence_log (trigger)",
++        &[],
++    )
++    .await?;
++    // A3: the backfill check was an unindexed COUNT over evidence_log
++    // (3,156 rows at measurement, growing daily) paid by every
++    // migrate() to rediscover a one-time backfill that finished long
++    // ago. The marker lives in exchange_config (PK read, 1 row). The
++    // COUNT runs at most once more — on the first migrate after this
++    // lands — and writes the marker either way. Same keys as worker.js.
++    let bf_done = db
++        .query_one("SELECT value FROM exchange_config WHERE key='backfill_v03_done'", &[])
++        .await?
++        .map(|r| r.text_or("value", ""))
++        .unwrap_or_default()
++        == "1";
++    if !bf_done {
++        let done = db
++            .query_one("SELECT COUNT(*) c FROM evidence_log WHERE trigger='backfill-v0.3'", &[])
++            .await?;
++        if done.map(|r| r.i64_or("c", 0)).unwrap_or(0) == 0 {
++            backfill_evidence(db).await?;
++        }
++        db.exec(
++            "INSERT OR REPLACE INTO exchange_config (key,value,updated_at) VALUES ('backfill_v03_done','1',?)",
++            &[Val::from(now_iso())],
++        )
+         .await?;
+-    if done.map(|r| r.i64_or("c", 0)).unwrap_or(0) == 0 {
+-        backfill_evidence(db).await?;
+     }
+     Ok(())
+ }
+--- exchange-core/src/routes.rs
++++ exchange-core/src/routes.rs (A3 patched)
+@@ -8,7 +8,7 @@
+ use crate::db::{row_to_json, Db, DbError, RowExt, Val};
+ use crate::env::Env;
+ use crate::govern::{run_job, submit_job, unclaimed_queue_depth, QUEUE_FULL_THRESHOLD};
+-use crate::migrate::{migrate, seed};
++use crate::migrate::{ensure_migrated, seed};
+ use crate::observe::{
+     auto_promote, billing_check, demote_check, list_resources_impl, observe,
+     prune_health_observations, prune_seal_registry, provider_down_check, register_candidate,
+@@ -311,7 +311,9 @@
+ 
+ async fn handle_inner(db: &dyn Db, req: &Request, env: &Env) -> Result<Response, DbError> {
+     let path = req.path.clone();
+-    migrate(db).await?;
++    // A3: was migrate() on EVERY request — the D1 burn, unguarded.
++    // ensure_migrated pays 1 PK row on a cold isolate, 0 when warm.
++    ensure_migrated(db).await?;
+ 
+     if path == "/" && req.method == "GET" {
+         return Ok(Response::json(
+@@ -1888,7 +1890,7 @@
+ 
+ /// scheduled: the 30-min reaction loop. Returns the cron output object.
+ pub async fn scheduled(db: &dyn Db, env: &Env) -> Result<Value, DbError> {
+-    migrate(db).await?;
++    ensure_migrated(db).await?;
+     let now_iso_s = now_iso();
+     let rs = db.query_all("SELECT * FROM resources", &[]).await?;
+     let mut out: Vec<Value> = Vec::new();

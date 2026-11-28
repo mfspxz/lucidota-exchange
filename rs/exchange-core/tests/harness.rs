@@ -124,10 +124,16 @@ pub async fn fresh_db() -> SqliteDb {
 }
 
 /// Test Env: no exchange key by default (tests set what they need), mock HTTP.
+/// Each call injects a FRESH in-memory seal registry, so a test's replay
+/// state is isolated from every other test running in parallel in the
+/// same binary (see `Env::seen_seals`).
 pub fn test_env() -> exchange_core::env::Env {
     exchange_core::env::Env {
         exchange_key: Some("test-admin-key".to_string()),
         secrets: std::collections::HashMap::new(),
         http: std::sync::Arc::new(exchange_core::env::MockHttp::new()),
+        seen_seals: Some(std::sync::Arc::new(std::sync::Mutex::new(
+            std::collections::HashMap::new(),
+        ))),
     }
 }
